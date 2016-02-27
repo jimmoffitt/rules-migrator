@@ -76,21 +76,21 @@ class RulesMigrator
 	  rules.each do |rule|
 		 request_data['rules'] << rule
 
-		 request = request_data['rules'].to_json
-		 
-		 current_size = request.size
+		 request = request_data.to_json
 		 
 		 if request.bytesize > (MAX_POST_DATA_SIZE_IN_MB * 1000000)
 
 			#Save request, start over
 			requests << request
+			AppLogger.log_debug "Request has size: #{request.bytesize/1000} KB"
 			request_data['rules'] = []
 			request_data['rules'] << rule
 		 end
 	  end
 
-	  if request_data['rules'].coont > 0
-	  	request = request_data['rules'].to_json
+	  if request_data['rules'].count > 0
+	  	request = request_data.to_json
+		AppLogger.log_debug "Request has size: #{request.bytesize/1000} KB"
 	  	requests << request
 	  end
 		

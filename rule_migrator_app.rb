@@ -9,7 +9,7 @@ if __FILE__ == $0 #This script code is executed when running this file.
 
 	  #Passing in a config file.... Or you can set a bunch of parameters.
 	  o.on('-a ACCOUNT', '--account', 'Account configuration file (including path) that provides OAuth settings.') { |account| $account = account }
-	  o.on('-c CONFIG', '--config', 'Settings configuration file (including path) that provides API settings.') { |config| $config = config }
+	  o.on('-c CONFIG', '--config', 'Settings configuration file (including path) that provides API settings.') { |settings| $settings = settings }
 	  o.on('-s SOURCE', '--source', '') { |source| $source = source }
 	  o.on('-t TARGET', '--target', '') { |target| $target = target }
 	  o.on('-v', '--verbose', 'When verbose, output all kinds of things, each request, most responses, etc.') { |verbose| $verbose = verbose }
