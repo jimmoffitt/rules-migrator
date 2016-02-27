@@ -1,0 +1,15 @@
+source:
+  url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/prod/rules.json
+
+target:
+  url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/prod.json
+
+options:
+  verbose: true
+  
+logging:
+  name: rule_migrator.log
+  log_path: ./log
+  warn_level: debug
+  size: 1 #MB
+  keep: 2
