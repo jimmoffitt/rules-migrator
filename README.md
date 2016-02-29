@@ -20,15 +20,16 @@ This tool has two main use-cases:
   **NOTE:** 2.0 → 1.0 is not supported. 
 
 + Rules formats: JSON and Ruby hashes.
-+ Internal rules ‘currency’ is hashes.
-+ External rules ‘currency’ is JSON.
+  + Internal rules ‘currency’ is hashes.
+  + External rules ‘currency’ is JSON.
+  
   + API → JSON → get_rules() → hash
   + APP → hash → post_rules() → JSON
  
 ## User-stories:
 
-As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
-As a Replay customer, I want to clone my real-time rules to my Replay stream.
++ As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
++ As a Replay customer, I want to clone my real-time rules to my Replay stream.
 
 ## Features
 
