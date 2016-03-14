@@ -20,7 +20,7 @@ This tool has two main use-cases:
   **NOTE:** 2.0 → 1.0 migrations are not supported. 
 
  
-## User-stories:
+## User-stories
 
 + As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
 + As a Replay customer, I want to clone my real-time rules to my Replay stream.
@@ -36,7 +36,7 @@ This tool has two main use-cases:
 
 There are many PowerTrack Operator changes with 2.0. New Operators have been introduced, some have been deprecated, and some ave had a grammar/name update. When migrating 1.0 rules to 2.0, this application attempts to translate when it can, although there will be cases in the case of deprecated Operators that the translation can not be performed. In all cases, the rules that can and can not be translated are logged. Also, in the cases where a rule can not be translated the 2.0 Rules API will respond with a list of rules that could not be added. This list will be presented to the user and logged.
  
- + lang: Operator changes.
+### lang: Operator changes.
  
  PowerTrack 1.0 supported two language classifications: the Gnip classification with the lang: Operators, and the Twitter classification with the twitter_lang: Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated. The Twitter classification supports more languages and in some cases was more accurate. 
  
@@ -58,7 +58,7 @@ There are many PowerTrack Operator changes with 2.0. New Operators have been int
     + *has:lang* will be replaced with *-lang:und*. Note that standalone negations are not supported. If rule translation results in a standaline ```-lang:und``` clause, the rule will be rejected by the Rules API. Rejected rules will be logged and output to the rule. These rejected rules will need to be assessed separated by the user.
     
     
-  + Operator Replacements  
+### Operator Replacements  
     
   Several PowerTrack 1.0 Operators are being replaced with 2.0 Operators with identical functionality.  
                 
@@ -79,15 +79,16 @@ There are many PowerTrack Operator changes with 2.0. New Operators have been int
     + ```profile_locality_contains:``` → ```profile_locality:```
     + ```profile_subregion_contains:``` → ```profile_subregion:```
     
-+ Klout Operators:
+### Klout Operators:
 
-    + klout_score: This Operator is not yet supported in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
-    + klout_topic_id: This Operator is not yet supported in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
-    + klout_topic: This Operator is deprecated in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
-    + klout_topic_contains: This Operator is deprecated in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.   
++ __klout_score:__ This Operator is not yet supported in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
++ __klout_topic_id:__ This Operator is not yet supported in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
+
++ __klout_topic:__ This Operator is deprecated in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
++ __klout_topic_contains:__ This Operator is deprecated in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.   
     
     
-+ Other Deprecated Operators.
+### Other Deprecated Operators.
     
     The following Operators are deprecated in 2.0. No removal or translation will be attempted, and rules with these Operators will not be added to 2.0 streams.   
     
@@ -96,21 +97,8 @@ There are many PowerTrack Operator changes with 2.0. New Operators have been int
     + has:profile_geo_subregion
     + has:profile_geo_locality
 
-    
+      
 
-
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-+ Handles 2.0 deprecation of *_contains: Operators 
-   
 ## Getting Started
 
 
