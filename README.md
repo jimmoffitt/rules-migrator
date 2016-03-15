@@ -29,6 +29,7 @@ This tool has two main use-cases:
 ## Features
 
 + Translates rules when necessary. 
++ Migrates rule tags as well.
 + Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
 
 
