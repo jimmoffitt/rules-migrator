@@ -281,12 +281,12 @@ class RulesMigrator
    #Order here matters: check profile_country_code first, then check country_code.
    def handle_country_code_operators(rule)
 	  
-	  if rule.include? 'profile_country_code:'
+	  if rule_has_pattern? rule, /profile_country_code:/
 		 rule.gsub!('profile_country_code:','profile_country_code:')
 		 #rule.gsub!('profile_country_code:','profile_country:') #TODO: Synch with PT 2.0 deploys.
 	  end
 
-	  if rule.include? 'country_code:'
+      if rule_has_pattern? rule, /[ ,()]country_code/
 		 rule.gsub!('country_code:','place_country_code:')
 		 #rule.gsub!('country_country_code:','place_country:') #TODO: Synch with PT 2.0 deploys.
 	  end
@@ -418,16 +418,16 @@ class RulesMigrator
 			
 			if response.code == 200
 			   AppLogger.log_info "Successful rule post to target system."
+
+
+			   #"{"summary":{"created":8,"not_created":5},"detail":[{"rule":{"value":"(lang:en OR lang:en OR lang:und) Gnip","tag":null,"id":710911249710653441},"created":true},{"rule":{"value":"(place:minneapolis OR bio:minnesota) (snow OR rain)","tag":null,"id":710911249735811073},"created":true},{"rule":{"value":"-lang:und (snow OR rain)","tag":null,"id":710911249735753728},"created":true},{"rule":{"value":"(lang:en) place_country_code:us bio:Twitter","tag":null,"id":710911249706409985},"created":true},{"rule":{"value":"(lang:en OR lang:und OR lang:en) Gnip","tag":null,"id":710911249735749632},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null,"id":710911249702191104},"created":true},{"rule":{"value":"lang:en Gnip","tag":null,"id":710911249735757825},"created":true},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null,"id":710911249706422273},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"lang:en Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"}]}"
 			   
 			else #TODO: handle errors. 
 			   
 			   response_json = response.body.to_json
 			   
 			   puts response_json
-			   
-			   
-			   sleep 1
-			   puts response.code
+
 			   #"{"error":{"detail":[{"rule":{"value":"has:lang (snow OR rain)"},
 			   #      "message":"The has:lang operator is not supported. Use lang:und to identify Tweets where a language classification was not assigned. (at position 1)\n"},
 			   #
