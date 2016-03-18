@@ -7,7 +7,23 @@ This tool has two main use-cases:
 + Clones PT 1.0 rules to PT 2.0.
 + Clones realtime rules to Replay streams. 
 
-### Fundamental details
+## User-stories
+
+Here are some common user-stories in mind when writing this app:
+
++ As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
++ As a real-time PowerTrack customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
++ As a Replay customer, I want to clone my real-time rules to my Replay stream.
+
+
+## Features
+
++ Translates rules when necessary. 
++ Migrates rules tags.
++ Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
+
+
+## Fundamental details
 
 + No rules are deleted.
 + Code disallows adding rules to the Source system.
@@ -18,19 +34,11 @@ This tool has two main use-cases:
   + 2.0 → 2.0
   
   **NOTE:** 2.0 → 1.0 migrations are not supported. 
+  
++ Process can either 
+    + Add rules to the Target system using the Rules API.
+    + Output Target rules JSON for review.  
 
- 
-## User-stories
-
-+ As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
-+ As a Replay customer, I want to clone my real-time rules to my Replay stream.
-
-
-## Features
-
-+ Translates rules when necessary. 
-+ Migrates rule tags as well.
-+ Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
 
 
 ## 1.0 → 2.0 Rule Translations
@@ -103,7 +111,30 @@ There are many PowerTrack Operator changes with 2.0. New Operators have been int
 ## Getting Started
 
 
-### Configuration details
+## Configuration details
+
+### Source and Target Systems
+
+```
+
+source:
+  url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/prod/rules.json
+
+target:
+  url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/prod.json
+
+```
+
+### Account Details
+
+```
+account:
+  account_name: my_account_name
+  user_name: my_username_email
+  password:
+  
+```
+
 
 
 ## Other Details
