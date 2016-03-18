@@ -6,6 +6,8 @@ target:
 
 options:
   verbose: true
+  inbox: ./inbox
+  outbox: ./outbox
   
 logging:
   name: rule_migrator.log
