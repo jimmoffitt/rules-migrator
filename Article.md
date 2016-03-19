@@ -9,21 +9,37 @@ article discusses several topics related to that effort:
 + Changes in PowerTrack Operators.
 + Updates to the Rules API.
 + Writing code for the Rules API.
-    + Fundamentals.
-    + Example "Rules Migrator" application.   
++ Example "Rules Migrator" application.   
     
 ### Changes in PowerTrack Operators  
 
-#### Changes in grammar
+PowerTrack 2.0 introduces a variety of changes to the Operators available for filtering Tweets of interest from the firehose. First, PowerTrack 2.0 introduces a set of new Operators, including emoji filterings, new expanded URL enrichments, and the ability to fine-tune media matching with Operators such as has:video and has:photo. See [HERE] for a complete list of what's new.
+
+Other changes include updates in simple grammar and language classification details, as well as a set of Operators that are being deprecated. 
+
+##### Grammar Updates
 
 A few PowerTrack Operators are changing only in name:
 
 + ```country_code``` --> ```place_country```
 + ```profile_country_code``` --> ```profile_country```
+ 
+So, if you have any rules that use these Operators, rule syntax updates will be necessary. 
 
-#### Changes in language Operators
 
-#### Deprecated Operators
+##### Tweet Language Operator Updates
+
+In PowerTrack 1.0, there was two different language classification systems and corresponding Operators. Gnip first introduced its language classification and the ```lang:``` Operator in March, 2012. Twitter launched its language classification in [DATE?], and the ```twitter_lang:``` Operator was introduced to PowerTrack. The Twitter language classification handles many more languages, and also indicates when a language was could not be identified. 
+
+As with all Gnip 2.0 products (along with [Full-Archive Search](http://support.gnip.com/apis/search_full_archive_api/)), PowerTrack 2.0 supports only the Twitter language classification. Since there is only one classification source now, there is only one PowerTrack Operator, ```lang:```. 
+
+As noted below in the next section, the version 1.0 ```has:geo``` is being deprecated. With PowerTrack 2.0, this Operator is replaced with the ```-lang:und``` negation clause (indicating that a language classification was made).
+
+##### Deprecated Operators
+
+As documentated [HERE], some Operators are being deprecated, partly due to lack of use.
+
+[TODO]
         
         
 ### Updates to the Rules API   
