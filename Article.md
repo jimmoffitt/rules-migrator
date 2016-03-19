@@ -16,6 +16,11 @@ article discusses several topics related to that effort:
 
 #### Changes in grammar
 
+A few PowerTrack Operators are changing only in name:
+
++ ```country_code``` --> ```place_country```
++ ```profile_country_code``` --> ```profile_country```
+
 #### Changes in language Operators
 
 #### Deprecated Operators
