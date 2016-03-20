@@ -2,20 +2,27 @@
 
 ### Introduction
 
-As announced last [date], a new version of Gnip's real-time PowerTrack is [in the works]. Everyone using real-time 
-PowerTrack will need to migrate their filtering rules from their version 1.0 systems over to version 2.0 systems. This 
-article discusses several topics related to that effort:
+As announced last [date], a new version of Gnip's real-time PowerTrack is [in the works]. Everyone using real-time. PowerTrack will need to migrate their filtering rules from their version 1.0 systems over to version 2.0 systems. 
 
+This process is pretty  straightforward, although there are some nuanes. Moving to 2.0 provides new methods for matching on Tweets of interest. More filtering metadata on linked URLs is available. There is also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific...
+
+This article discusses several topics related to that effort:
+
++ New PowerTrack Operators.
 + Changes in PowerTrack Operators.
 + Updates to the Rules API.
 + Writing code for the Rules API.
 + Example "Rules Migrator" application.   
+ 
+
     
 ### Changes in PowerTrack Operators  
 
 PowerTrack 2.0 introduces a variety of changes to the Operators available for filtering Tweets of interest from the firehose. First, PowerTrack 2.0 introduces a set of new Operators, including emoji filterings, new expanded URL enrichments, and the ability to fine-tune media matching with Operators such as has:video and has:photo. See [HERE] for a complete list of what's new.
 
 Other changes include updates in simple grammar and language classification details, as well as a set of Operators that are being deprecated. 
+
+##### New Operators
 
 ##### Grammar Updates
 
@@ -78,7 +85,22 @@ list, add and delete rules.
 
 ### Example 'Rule Migrator' Application
 
+As a group focused on supporting Gnip customers, we are avid 'in-house' users of real-time PowerTrack. As a developer advocate I get to write and code about data stories, and have curatored many sets of operators that often have a greographic focus. So I sat down to write a tool that could help us translate and migrate PowerTrack 1.0 rules to version 2.0. The following sections discuss developing and working with this tool.
+
+This tool is very much a prototype, a 'talking point' in the broader discussion of filtering the firehose with PowerTrack. If you improve or extend or refactor, or whatever, this code base, please share your efforts.
+
 [https://github.com/jimmoffitt/rules-migrator]
+
+### Rule Translations
+
+###Rule Migrations
+
+
+Examples:
+
++ Realtime 1.0 to 2.0
++ Real-time to Replay streams
++ Tumblr dev to prod stream
 
 
 
