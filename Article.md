@@ -50,12 +50,33 @@ As noted below in the next section, the version 1.0 ```has:geo``` is being depre
 
 ##### Deprecated Operators
 
-As documentated [HERE], some Operators are being deprecated, partly because they were never widely adopted.
+As documentated [HERE](), some Operators are being deprecated, partly because they were never widely adopted.
 
-[TODO]
-        
-        
+If your rule set includes any of the following Operators, those clauses will need to be removed since there is no equivalent Operator in version 2.0:
+
++ ```klout_topic:```
++ ```klout_topic-contains:```
++ ```bio_lang```
++ ```has:profile_geo_region```
++ ```has:profile_geo_subregion```
++ ```has:profile_geo_locality```
+
+There are another set of deprecated version 1.0 Operators where the filtering/matching behavior can be approximated by alternate version Operators. This set is comprise of all of the ```*_contains:``` Operators, and should be replaced with the non-contains version:
+
++ ```bio_location_contains:``` --> ```bio_location:```
++ ```place_contains:``` --> ```place:```
++ ```profile_region_contains:``` --> ```profile_region:```
++ ```profile_locality_contains:``` --> ```profile_locality:```
++ ```profile_subregion_contains:``` --> ```profile_subregion:```
++ ```bio_name_contains:``` --> ```bio_name:```
++ ```bio_contains:``` -->  ```bio:```
+ 
+We have found that very few customers are using these Operators to match on substrings, but rather are in fact filtering on complete tokens. Therefore we anticipate that the vast majority of PowerTrack users will be able to use the replacement Operators without changing current matching behavior. If you are using a quoted phrase, you will need to break you the clause into separate tokens. For example,
+the rule ```bio_contains:"software developer"``` would translate to ```(bio:software bio:developer)```. If on the off chance that you are using any of these Operators with a substring, you will need to rewrite the rule and attempt to match on the multiple complete tokens you want to match. For example, instead of ```Boulder bio_location_contains:co``` could become ```Boulder (bio_location:co OR bio_location:colo OR bio_location:colorado```.
+
 ### Updates to the Rules API <a id="rules_api_changes" class="tall">&nbsp;</a>  
+
+Along with PowerTrack Operator updates, there are some important new features arriving with version 2.0 of the Rules API. 
 
 #### Request payload sizes
  
@@ -73,20 +94,16 @@ PowerTrack 2.0 introduces a new rule attribute, a primary key ID generated when 
     
 #### Rule Validation
  
+ https://gnip-api.twitter.com/rules/powertrack/accounts/<accountName>/<streamLabel>/validation.json
+
 
 ### Writing code for the Rules API <a id="writing_code" class="tall">&nbsp;</a>
 
 Many reasons to do so... Synching systems... between your system and Gnip's. Between real-time and Replay streams. Or, 
 as in an upcoming example, migrating 1.0 rules to a 2.0 stream.  
 
-#### Fundamentals
-
 The Rules API is a RESTful API used to manage PowerTrack real-time filters. It supports a small set of methods used to 
 list, add and delete rules. 
-
-##### Loading rules from PowerTrack
-
-##### Posting rules to PowerTrack
 
 
 ### Example 'Rule Migrator' Application <a id="rule_migrator" class="tall">&nbsp;</a>
