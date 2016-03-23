@@ -94,13 +94,13 @@ The grammar for these Operators is being updated to be more concise and logical.
 
 Other substring matching Operators are being equivalent token-based Operators. This group is made up of the ```*_contains``` Operators: 
 
-    + ```place_contains:``` → ```place:```
-    + ```bio_location_contains:``` → ```bio_location:```
-    + ```bio_contains:``` → ```bio:```
-    + ```bio_name_contains:``` → ```bio_name:```
-    + ```profile_region_contains:``` → ```profile_region:```
-    + ```profile_locality_contains:``` → ```profile_locality:```
-    + ```profile_subregion_contains:``` → ```profile_subregion:```
++ ```place_contains:``` → ```place:```
++ ```bio_location_contains:``` → ```bio_location:```
++ ```bio_contains:``` → ```bio:```
++ ```bio_name_contains:``` → ```bio_name:```
++ ```profile_region_contains:``` → ```profile_region:```
++ ```profile_locality_contains:``` → ```profile_locality:```
++ ```profile_subregion_contains:``` → ```profile_subregion:```
 
 [TODO: examples]
     
@@ -117,19 +117,69 @@ Other substring matching Operators are being equivalent token-based Operators. T
     
     The following Operators are deprecated in 2.0. No removal or translation will be attempted, and rules with these Operators will not be added to 2.0 streams.   
     
-    + bio_lang:
-    + has:profile_geo_region
-    + has:profile_geo_subregion
-    + has:profile_geo_locality
++ bio_lang:
++ has:profile_geo_region
++ has:profile_geo_subregion
++ has:profile_geo_locality
+
 
       
 
 ## Getting Started  <a id="getting-started" class="tall">&nbsp;</a>
 
-
++ Get some Gnip PowerTrack streams and rul esets you need to manage!
++ Deploy client code
+    + Clone this repository.
+    + Using the Gemfile, run bundle.
++ Configure both the Accounts and Options configuration files.
+    + Config ```accounts.yaml``` file with OAuth keys and tokens.
+    + Config ```options.yaml``` file with processing options, Engagement Types, and Engagement Groupings.
+    + See the [Configuring Client](#configuring-client) section for the details.
++ Execute the Client using [command-line options](#command-line-options).
+    + To confirm everything is ready to go, you can run the following command:
+    ```
+    $ruby rule_migrator.rb -test 
+    ```
+    The following output is at least a sign that the code is ready to go:
+    
+    ```
+Testing rule_migrator, ready to use...
+    ```
 ### Configuration details
 
-### Source and Target Systems
+
+#### Account credentials
+
+```
+account:
+  account_name: my_account_name
+  user_name: my_username_email
+  password:
+```
+
+#### Options
+
+```
+source:
+  url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/<LABEL>/rules.json
+
+target:
+  url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/<LABEL>.json
+
+options:
+  write_rules_to: files #options: files, api
+  inbox: ./inbox
+  verbose: true
+  
+logging:
+  name: rule_migrator.log
+  log_path: ./log
+  warn_level: debug
+  size: 1 #MB
+  keep: 2
+```
+
+##### Source and Target Systems
 
 ```
 
@@ -141,15 +191,20 @@ target:
 
 ```
 
-### Account Details
+#### Options
 
 ```
-account:
-  account_name: my_account_name
-  user_name: my_username_email
-  password:
-  
+options:
+  write_rules_to: files #options: files, api
+  inbox: ./inbox
+  verbose: true
 ```
+
+### Code Details
+
+
+
+#### Rule Translations
 
 
  + If just *lang:*
