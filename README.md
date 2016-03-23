@@ -15,7 +15,7 @@ This tool has three main use-cases:
 + Clones real-time rules to Replay streams. 
 + Clones rules between real-time streams, such as 'dev' to 'prod' streams.
  
-Given the high volumes of real-time Twitter data, it is highly recommended that rules are reviewed before add to a live stream. If you are deploying a new PowerTrack stream, this tool can be use to migrate the rules, then verify your ruleset before connecting to the new stream 
+Given the high volumes of real-time Twitter data, it is highly recommended that rules are reviewed before adding to a live stream. If you are deploying a new PowerTrack stream, this tool can be use to migrate the rules, then verify your ruleset before connecting to the new stream 
 
 ## User-stories  <a id="user-stories" class="tall">&nbsp;</a>
 
@@ -123,7 +123,16 @@ Other substring matching Operators are being equivalent token-based Operators. T
 + has:profile_geo_locality
 
 
-      
+## Example Usage Patterns
+
++ Translate a set of vesion 1.0 rules, write them to a local JSON file, and review.
+
+
++ Migrate a set of PowerTrack rules from a 'dev' stream to a 'prod' stream.
+
+
++ I had a client-side network operational problem and want to use Replay to recover data I missed in real-time.  
+
 
 ## Getting Started  <a id="getting-started" class="tall">&nbsp;</a>
 
