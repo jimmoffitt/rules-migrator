@@ -4,7 +4,13 @@
 
 As announced last [date], a new version of Gnip's real-time PowerTrack, version 2.0, is [in the works]. Everyone using real-time PowerTrack will need to migrate their filtering rules from their version 1.0 systems over to version 2.0. 
 
-This process is pretty straightforward, although there are some nuances. First, moving to 2.0 provides new methods for matching on Tweets of interest. For example, more filtering metadata on linked URLs is available such as the web site HTML Titles and Descriptions. There is also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. Then there are a number of other 2.0 PowerTrack Operator updates. A few Operators have changed only in name, while others have been deprecated. Finally, there are updates related to language classification.
+This process is pretty straightforward, although there are some nuances. First, moving to 2.0 provides [new PowerTrack](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) Operators for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
+
+Beyond new Operators, there are other changes introduced with PowerTrack 2.0:
+
++ Some Operators have been deprecated.
++ All language classifications are supplied by a Twitter system, and the Gnip language enrichment is being deprecated.
++ With hopes of providing a more logical grammar, some Operators have changed in name only.
 
 This article discusses several topics related to that effort:
 
@@ -21,7 +27,7 @@ Other changes include updates in simple grammar and language classification deta
 
 ##### New Operators 
 
-PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE](http://support.gnip.com/apis/powertrack2.0/overview.html#NewFeatures) for the list of new Operators.
+PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE]((http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators)) for the list of new Operators.
 
 The focus of this article, and the [migration tool](#rule_migrator), is how to migrate existing version 1.0 rules to 2.0. While these new Operators are not part of the rule translation discussion, incorporating the new Operators should be considered as you migrate to version 2. Based on the types of matching you are performing with version 1.0, here are some examples of filtering mechanisms that will likely benefir from these new Operators:
 
