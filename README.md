@@ -1,13 +1,21 @@
 # rules-migrator
 
-## Introduction
+[Introduction](#introduction)
+[User-stories](#user-stories)
+[Features](#features)
+[1.0 → 2.0 Rule Translations](#translations)
+[Getting Started](#getting-started)
+
+## Introduction <a id="introduction" class="tall">&nbsp;</a>
+
 This tool migrates PowerTrack rules from one stream to another. It uses the Rules API to get rules from a ‘Source’ stream, and adds those rules to a ‘Target’ stream.
 
-This tool has two main use-cases:
+This tool has three main use-cases:
 + Clones PT 1.0 rules to PT 2.0.
-+ Clones realtime rules to Replay streams. 
++ Clones real-time rules to Replay streams. 
++ Clones rules between real-time streams, such as 'dev' to 'prod' streams.
 
-## User-stories
+## User-stories  <a id="user-stories" class="tall">&nbsp;</a>
 
 Here are some common user-stories in mind when writing this app:
 
@@ -16,14 +24,14 @@ Here are some common user-stories in mind when writing this app:
 + As a Replay customer, I want to clone my real-time rules to my Replay stream.
 
 
-## Features
+## Features  <a id="features" class="tall">&nbsp;</a>
 
 + Translates rules when necessary. 
 + Migrates rules tags.
 + Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
 
 
-## Fundamental details
+### Fundamental Details
 
 + No rules are deleted.
 + Code disallows adding rules to the Source system.
@@ -41,11 +49,11 @@ Here are some common user-stories in mind when writing this app:
 
 
 
-## 1.0 → 2.0 Rule Translations
+## 1.0 → 2.0 Rule Translations  <a id="translations" class="tall">&nbsp;</a>
 
 There are many PowerTrack Operator changes with 2.0. New Operators have been introduced, some have been deprecated, and some ave had a grammar/name update. When migrating 1.0 rules to 2.0, this application attempts to translate when it can, although there will be cases in the case of deprecated Operators that the translation can not be performed. In all cases, the rules that can and can not be translated are logged. Also, in the cases where a rule can not be translated the 2.0 Rules API will respond with a list of rules that could not be added. This list will be presented to the user and logged.
  
-### lang: Operator changes
+### Language Oerator Changes
  
  PowerTrack 1.0 supported two language classifications: the Gnip classification with the lang: Operators, and the Twitter classification with the twitter_lang: Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated. The Twitter classification supports more languages and in some cases was more accurate. 
  
@@ -108,10 +116,10 @@ There are many PowerTrack Operator changes with 2.0. New Operators have been int
 
       
 
-## Getting Started
+## Getting Started  <a id="getting-started" class="tall">&nbsp;</a>
 
 
-## Configuration details
+### Configuration details
 
 ### Source and Target Systems
 
