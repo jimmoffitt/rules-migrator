@@ -5,9 +5,9 @@ target:
   url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/prod.json
 
 options:
-  verbose: true
+  write_rules_to: files #options: files, api
   inbox: ./inbox
-  outbox: ./outbox
+  verbose: true
   
 logging:
   name: rule_migrator.log
