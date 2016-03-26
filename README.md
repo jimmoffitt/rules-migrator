@@ -17,6 +17,10 @@ This tool has three main use-cases:
  
 Given the high volumes of real-time Twitter data, it is highly recommended that rules are reviewed before adding to a live stream. If you are deploying a new PowerTrack stream, this tool can be use to migrate the rules, then verify your ruleset before connecting to the new stream 
 
+For more information on migrating PowerTrack rules from one stream to another, see [this Gnip soppurt article].
+
+The rest of this document focuses on the Ruby example app used to migrate rules.
+
 ## User-stories  <a id="user-stories" class="tall">&nbsp;</a>
 
 Here are some common user-stories in mind when writing this app:
@@ -57,30 +61,15 @@ There are many PowerTrack Operator changes with 2.0. New Operators have been int
 
 In all cases, the rules that can and can not be translated are logged. Also, in the cases where a rule can not be translated the 2.0 Rules API will respond with a list of rules that could not be added. This list will be presented to the user and logged. [Test/code 
  
-### Language Operator Changes
  
-PowerTrack 1.0 supported two language classifications: the Gnip classification with the ```lang:``` Operator, and the Twitter classification with the ```twitter_lang:``` Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated, and there will be a single ```lang``` Operator powered by the Twitter system. The Twitter classification supports more languages (how many?), assigns a ```und``` (undefined) when no classification can be made (e.g., Tweets with only emojis), and in some cases was more accurate. 
+ In PowerTrack 1.0, there were two different language classification systems and corresponding Operators. Gnip first introduced its language classification and the ```lang:``` Operator in March, 2012. Twitter launched its language classification in [DATE?], and the ```twitter_lang:``` Operator was introduced to PowerTrack. The Twitter language classification handles many more languages, and also indicates when a language was could not be identified by assigning a 'und' result. 
 
-If you have version 1.0 rules based on language classifications, here are some things to handle:
+As with all Gnip 2.0 products (along with [Full-Archive Search](http://support.gnip.com/apis/search_full_archive_api/)), PowerTrack 2.0 supports only the Twitter language classification. Since there is only one classification source now, there is only one PowerTrack Operator, ```lang:```. 
 
-+ Since the Twitter system handles all the Gnip languages, and uses the same language codes, you can safely convert all ```twitter_lang:``` operators to ```lang:```.
-  + Probably the most common pattern in rules that reference both systems is an OR clause with a common language code, such as:
-      ```(lang:es OR twitter_lang:es)```
-    When migrating to version 2.0, the equivalent rule clause is ```lang:es```
-    
-  + Another common pattern is requiring both systems to agree on the language classification:
-      ```(lang:es twitter_lang:es)```  
-    When migrating to version 2.0, the equivalent rule clause is ```lang:es```
+Since the Twitter classifications cover *all* of the Gnip languages, and use the identical two-character codes, all ```lang:``` version 1.0 rule clauses will translate smoothly to version 2.0. Since the introduction of the Twitter classification, many PowerTrack users have introduced the ```twitter_lang:``` Operator to their rule set. When moving to version 2.0, these rule clauses need to be re-written as ```lang:```.
 
-  + Many use-cases are helped by knowing whether the Tweet has a language classification, yet there is no need to know (at the filtering level) what the language is.
-    + With PT 1.0, there was the ```has:lang``` rule clause to determine whether a classifaction is available
-         ```has:lang (snow OR neige OR neve OR nieve OR snö OR снег)``` 
-    + With PT 2.0, there is the ```-lang:und``` rule clause to do the same thing. 
-        ```-lang:und (snow OR neige OR neve OR nieve OR snö OR снег)``` 
-
- + Another common pattern is specifying a specific language or matching on Tweets that could not be classified:
-     ```(-has:lang OR lang:en OR twitter_lang:en) (snow OR rain OR flood)```
-     When migrating to version 2.0, the equivalent rule clause is  ```(lang:und OR lang:en) (snow OR rain OR flood)```
+As noted below in the next section, the version 1.0 ```has:geo``` is being deprecated. With PowerTrack 2.0, this Operator is replaced with the ```-lang:und``` negation clause (indicating that a language classification was made).
+ 
 
 ### Operator Replacements  
     
