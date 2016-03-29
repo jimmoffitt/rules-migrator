@@ -1,6 +1,6 @@
 require 'optparse'
 
-require_relative './common/app/app_logger'
+require_relative './common/app_logger'
 require_relative './lib/rules_migrator'
 
 def parseOptions(o)
