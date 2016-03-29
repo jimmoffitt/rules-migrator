@@ -1,5 +1,5 @@
-require_relative '../common/app/app_logger'
-require_relative "../common/http/restful"
+require_relative '../common/app_logger'
+require_relative "../common/restful"
 
 require 'json'
 require 'yaml'
@@ -25,7 +25,7 @@ class RulesMigrator
 	  @source = {:url => '', :rules => [], :num_rules => 0, :name => 'Source'}
 	  @target = {:url => '', :rules => [], :num_rules_before => 0, :num_rules_after => 0, :name => 'Target'}
 	  @credentials = {:user_name => '', :password => ''}
-	  @options = {:verbose => true, :write_rules_to => 'api', :inbox => './inbox'}
+	  @options = {:verbose => true, :write_rules_to => 'api', :rules_folder => './rules'}
 
 	  set_credentials(accounts)
 	  set_options(settings)
@@ -61,7 +61,7 @@ class RulesMigrator
 		 @target[:url] = options['target']['url'] #Load Target details
 
 		 @options[:write_rules_to] = options['options']['write_rules_to']
-		 @options[:inbox] = options['options']['inbox']
+		 @options[:rules_folder] = options['options']['rules_folder']
 		 @options[:verbose] = options['options']['verbose']
 
 	  rescue
@@ -414,8 +414,8 @@ class RulesMigrator
 	  filename = filename_base
 
 	  until rules_written
-		 if not File.file?("#{@inbox}/#{filename}.json")
-			File.open("#{@inbox}/#{filename}.json", 'w') { |file| file.write(request) }
+		 if not File.file?("#{@options[:rules_folder]}/#{filename}.json")
+			File.open("#{@options[:rules_folder]}/#{filename}.json", 'w') { |file| file.write(request) }
 			rules_written = true
 		 else
 			num += 1
@@ -512,5 +512,7 @@ class RulesMigrator
 	  #Note any rules that needed to be 'translated'.
 
    end
+   
+
 
 end
