@@ -27,7 +27,7 @@ PowerTrack 2.0 introduces a variety of changes to the Operators available for fi
 
 Other changes include updates in simple grammar and language classification details, as well as a set of Operators that are being deprecated. 
 
-##### New Operators 
+#### New Operators 
 
 PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE]((http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators)) for the list of new Operators.
 
@@ -37,7 +37,7 @@ The focus of this article, and the [migration tool](#rule_migrator), is how to m
 + The ```has:media``` Operator operators on both native photos and videos. With version 2.0, you can make a distriction between these two media types with the ```has:videos``` and ```has:images``` Operators. 
 + If you are matching on cashtags with version 1.0, you needed to make a choice between matching with quoted phrases ("\$CashTag\") or keyword-type ($CashTag) rule clauses. With version 2.0 there is a cashtag Operator that provides the definitive method for cashtags that are included in the Tweet message. These cashtag entities are parsed from the Tweet body and placed in the ```twitter_entities:symbols``` JSON attribute. In this way, the new cashtag Operator is completely analagous to the hashtag Operator.     
 
-### Language Operator Changes
+#### Language Operator Changes
  
 PowerTrack 1.0 supported two language classifications: the Gnip classification with the ```lang:``` Operator, and the Twitter classification with the ```twitter_lang:``` Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated, and there will be a single ```lang:``` Operator powered by the Twitter system. The Twitter classification supports 40 (!) more languages, assigns a ```und``` (undefined) when no classification can be made (e.g., Tweets with only emojis and URLs), and in some cases was more accurate. 
 
@@ -62,7 +62,7 @@ If you have version 1.0 rules based on language classifications, here are some t
      ```(-has:lang OR lang:en OR twitter_lang:en) (snow OR rain OR flood)```
      When migrating to version 2.0, the equivalent rule clause is  ```(lang:und OR lang:en) (snow OR rain OR flood)```
 
-##### Grammar Updates
+#### Grammar Updates
 
 These PowerTrack Operators are changing only in name:
 
@@ -73,7 +73,7 @@ So, if you have any rules that use these Operators, a simple Operator replacemen
 
 + The version 1.0 rule clause ```(country_code:us OR profile_country_code:us)``` becomes ```(place_country:us OR profile_country:us)``` with version 2.0.
 
-##### Deprecated Operators
+#### Deprecated Operators
 
 As documentated [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators), some Operators are being deprecated, partly because they were never widely adopted.
 
