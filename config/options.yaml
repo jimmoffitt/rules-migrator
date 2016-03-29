@@ -1,12 +1,12 @@
 source:
-  url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/prod/rules.json
+  url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/<LABEL>/rules.json
 
 target:
-  url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/prod.json
+  url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/<LABEL>.json
 
 options:
   write_rules_to: files #options: files, api
-  inbox: ./inbox
+  rules_folder: ./rules
   verbose: true
   
 logging:

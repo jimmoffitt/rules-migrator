@@ -122,8 +122,7 @@ if __FILE__ == $0 #This script code is executed when running this file.
   AppLogger.config_file = '../config/app_settings.yaml'
   AppLogger.set_config
   AppLogger.set_logger
-  
-  
+
   AppLogger.log.info "Logging information."
   AppLogger.log.debug "Logging debug message."
 
