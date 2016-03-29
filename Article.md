@@ -4,7 +4,13 @@
 
 As announced last [date], a new version of Gnip's real-time PowerTrack, version 2.0, is [in the works]. Everyone using real-time PowerTrack will need to migrate their filtering rules from their version 1.0 systems over to version 2.0. 
 
-This process is pretty straightforward, although there are some nuances. First, moving to 2.0 provides new methods for matching on Tweets of interest. For example, more filtering metadata on linked URLs is available such as the web site HTML Titles and Descriptions. There is also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. Then there are a number of other 2.0 PowerTrack Operator updates. A few Operators have changed only in name, while others have been deprecated. Finally, there are updates related to language classification.
+This process is pretty straightforward, although there are some nuances. First, moving to 2.0 provides [new PowerTrack](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) Operators for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
+
+Beyond new Operators, there are other changes introduced with PowerTrack 2.0:
+
++ Some Operators have been deprecated.
++ All language classifications are supplied by a Twitter system, and the Gnip language enrichment is being deprecated.
++ With hopes of providing a more logical grammar, some Operators have changed in name only.
 
 This article discusses several topics related to that effort:
 
@@ -21,13 +27,39 @@ Other changes include updates in simple grammar and language classification deta
 
 ##### New Operators 
 
-PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE](http://support.gnip.com/apis/powertrack2.0/overview.html#NewFeatures) for the list of new Operators.
+PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE]((http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators)) for the list of new Operators.
 
 The focus of this article, and the [migration tool](#rule_migrator), is how to migrate existing version 1.0 rules to 2.0. While these new Operators are not part of the rule translation discussion, incorporating the new Operators should be considered as you migrate to version 2. Based on the types of matching you are performing with version 1.0, here are some examples of filtering mechanisms that will likely benefir from these new Operators:
 
 + If your rules use the ```url_contains``` Operator you'll probably want to consider using the new ```url_title``` and ```url_description``` Operators. These new Operators enable you to dig a bit deeper into the included link to match on more than just tokens and patterns of the URL.   
 + The ```has:media``` Operator operators on both native photos and videos. With version 2.0, you can make a distriction between these two media types with the ```has:videos``` and ```has:images``` Operators. 
 + If you are matching on cashtags with version 1.0, you needed to make a choice between matching with quoted phrases ("\$CashTag\") or keyword-type ($CashTag) rule clauses. With version 2.0 there is a cashtag Operator that provides the definitive method for cashtags that part of the Tweet body. These cashtag entities are parsed from the Tweet body and placed in the ```twitter_entities:symbols``` JSON attribute. In this way, the new cashtag Operator is completely analagous to the hashtag Operator.     
+
+### Language Operator Changes
+ 
+PowerTrack 1.0 supported two language classifications: the Gnip classification with the ```lang:``` Operator, and the Twitter classification with the ```twitter_lang:``` Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated, and there will be a single ```lang``` Operator powered by the Twitter system. The Twitter classification supports more languages (how many?), assigns a ```und``` (undefined) when no classification can be made (e.g., Tweets with only emojis), and in some cases was more accurate. 
+
+If you have version 1.0 rules based on language classifications, here are some things to handle:
+
++ Since the Twitter system handles all the Gnip languages, and uses the same language codes, you can safely convert all ```twitter_lang:``` operators to ```lang:```.
+  + Probably the most common pattern in rules that reference both systems is an OR clause with a common language code, such as:
+      ```(lang:es OR twitter_lang:es)```
+    When migrating to version 2.0, the equivalent rule clause is ```lang:es```
+    
+  + Another common pattern is requiring both systems to agree on the language classification:
+      ```(lang:es twitter_lang:es)```  
+    When migrating to version 2.0, the equivalent rule clause is ```lang:es```
+
+  + Many use-cases are helped by knowing whether the Tweet has a language classification, yet there is no need to know (at the filtering level) what the language is.
+    + With PT 1.0, there was the ```has:lang``` rule clause to determine whether a classifaction is available
+         ```has:lang (snow OR neige OR neve OR nieve OR snö OR снег)``` 
+    + With PT 2.0, there is the ```-lang:und``` rule clause to do the same thing. 
+        ```-lang:und (snow OR neige OR neve OR nieve OR snö OR снег)``` 
+
+ + Another common pattern is specifying a specific language or matching on Tweets that could not be classified:
+     ```(-has:lang OR lang:en OR twitter_lang:en) (snow OR rain OR flood)```
+     When migrating to version 2.0, the equivalent rule clause is  ```(lang:und OR lang:en) (snow OR rain OR flood)```
+
 
 ##### Grammar Updates
 
@@ -38,19 +70,9 @@ These PowerTrack Operators are changing only in name:
  
 So, if you have any rules that use these Operators, rule syntax updates will be necessary. 
 
-##### Tweet Language Operator Updates
-
-In PowerTrack 1.0, there were two different language classification systems and corresponding Operators. Gnip first introduced its language classification and the ```lang:``` Operator in March, 2012. Twitter launched its language classification in [DATE?], and the ```twitter_lang:``` Operator was introduced to PowerTrack. The Twitter language classification handles many more languages, and also indicates when a language was could not be identified by assigning a 'und' result. 
-
-As with all Gnip 2.0 products (along with [Full-Archive Search](http://support.gnip.com/apis/search_full_archive_api/)), PowerTrack 2.0 supports only the Twitter language classification. Since there is only one classification source now, there is only one PowerTrack Operator, ```lang:```. 
-
-Since the Twitter classifications cover *all* of the Gnip languages, and use the identical two-character codes, all ```lang:``` version 1.0 rule clauses will translate smoothly to version 2.0. Since the introduction of the Twitter classification, many PowerTrack users have introduced the ```twitter_lang:``` Operator to their rule set. When moving to version 2.0, these rule clauses need to be re-written as ```lang:```.
-
-As noted below in the next section, the version 1.0 ```has:geo``` is being deprecated. With PowerTrack 2.0, this Operator is replaced with the ```-lang:und``` negation clause (indicating that a language classification was made).
-
 ##### Deprecated Operators
 
-As documentated [HERE](), some Operators are being deprecated, partly because they were never widely adopted.
+As documentated [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators), some Operators are being deprecated, partly because they were never widely adopted.
 
 If your rule set includes any of the following Operators, those clauses will need to be removed since there is no equivalent Operator in version 2.0:
 
@@ -61,7 +83,7 @@ If your rule set includes any of the following Operators, those clauses will nee
 + ```has:profile_geo_subregion```
 + ```has:profile_geo_locality```
 
-There are another set of deprecated version 1.0 Operators where the filtering/matching behavior can be approximated by alternate version Operators. This set is comprise of all of the ```*_contains:``` Operators, and should be replaced with the non-contains version:
+There are another set of deprecated version 1.0 Operators where the filtering/matching behavior can be approximated by similar, alternate Operators. This group is made up of substring matching Operators that are being replaced by token-based Operators:
 
 + ```bio_location_contains:``` --> ```bio_location:```
 + ```place_contains:``` --> ```place:```
@@ -71,8 +93,14 @@ There are another set of deprecated version 1.0 Operators where the filtering/ma
 + ```bio_name_contains:``` --> ```bio_name:```
 + ```bio_contains:``` -->  ```bio:```
  
-We have found that very few customers are using these Operators to match on substrings, but rather are in fact filtering on complete tokens. Therefore we anticipate that the vast majority of PowerTrack users will be able to use the replacement Operators without changing current matching behavior. If you are using a quoted phrase, you will need to break you the clause into separate tokens. For example,
-the rule ```bio_contains:"software developer"``` would translate to ```(bio:software bio:developer)```. If on the off chance that you are using any of these Operators with a substring, you will need to rewrite the rule and attempt to match on the multiple complete tokens you want to match. For example, instead of ```Boulder bio_location_contains:co``` could become ```Boulder (bio_location:co OR bio_location:colo OR bio_location:colorado```.
+So, any use of ```*_contains:``` Operators, and should be replaced with the non-contains version.
+ 
+We have found that very few customers are using these Operators to match on substrings, but rather are in fact filtering on complete tokens. Therefore we anticipate that the vast majority of PowerTrack users will be able to use the replacement Operators without altering current matching behavior. 
+
+If you are using a quoted phrase, you will need to break you the clause into separate tokens. For example, the rule ```bio_contains:"software developer"``` would translate to ```(bio:software bio:developer)```. 
+
+If on the off chance that you are using any of these Operators with a substring, you will need to rewrite the rule and attempt to match on the multiple complete tokens you want to match. For example, instead of ```Boulder bio_location_contains:co``` could become ```Boulder (bio_location:co OR bio_location:colo OR bio_location:colorado```.
+
 
 ### Updates to the Rules API <a id="rules_api_changes" class="tall">&nbsp;</a>  
 
@@ -108,22 +136,11 @@ list, add and delete rules.
 
 ### Example 'Rule Migrator' Application <a id="rule_migrator" class="tall">&nbsp;</a>
 
-As a group focused on supporting Gnip customers, we are avid 'in-house' users of real-time PowerTrack. As a developer advocate I get to write and code about data stories, and have curatored many sets of operators that often have a greographic focus. So I sat down to write a tool that could help us translate and migrate PowerTrack 1.0 rules to version 2.0. The following sections discuss developing and working with this tool.
-
-This tool is very much a prototype, a 'talking point' in the broader discussion of filtering the firehose with PowerTrack. If you improve or extend or refactor, or whatever, this code base, please share your efforts.
+As a group focused on supporting Gnip customers, we are avid 'in-house' users of real-time PowerTrack. As developer advocates we work directly with Twitter data and often [write data stories](https://blog.gnip.com/tweeting-rain-part-4-tweets-2013-colorado-flood/). As a results we have curatored many sets of operators that often have a greographic focus. So I sat down to write a tool that could help us translate and migrate PowerTrack 1.0 rules to version 2.0. The [Rules Migrator]([https://github.com/jimmoffitt/rules-migrator]) tool is very much a prototype, a 'talking point' in the broader discussion of filtering the firehose with PowerTrack. If you improve or extend or refactor, or whatever, this code base, please share your efforts.
 
 [https://github.com/jimmoffitt/rules-migrator]
 
-### Rule Translations
 
-###Rule Migrations
-
-
-Examples:
-
-+ Realtime 1.0 to 2.0
-+ Real-time to Replay streams
-+ Tumblr dev to prod stream
 
 
 
