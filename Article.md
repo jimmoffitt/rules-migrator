@@ -8,6 +8,8 @@ This process is pretty straightforward, although there are many details to consi
 
 Beyond new Operators, there are other rule changes introduced with PowerTrack 2.0:
 
++ Only 'long' rules, with 2,048 characters, are supported.
++ Gnip ```matching_rules``` array are provided in both 'original' and Activity Stream formats. 
 + Some Operators have been deprecated.
 + All language classifications are supplied by a Twitter system, and the Gnip language enrichment is being deprecated.
 + With hopes of providing a more logical grammar, some Operators have changed in name only.
@@ -60,7 +62,6 @@ If you have version 1.0 rules based on language classifications, here are some t
      ```(-has:lang OR lang:en OR twitter_lang:en) (snow OR rain OR flood)```
      When migrating to version 2.0, the equivalent rule clause is  ```(lang:und OR lang:en) (snow OR rain OR flood)```
 
-
 ##### Grammar Updates
 
 These PowerTrack Operators are changing only in name:
@@ -84,7 +85,7 @@ If your rule set includes any of the following Operators, those clauses will nee
 + ```has:profile_geo_region```*
 + ```has:profile_geo_subregion```*
 + ```has:profile_geo_locality```*
-       * Note that ```has:profile_geo``` is still supported in version 2.0. 
+       `* Note that ```has:profile_geo``` is still supported in version 2.0. 
 
 There are another set of deprecated version 1.0 Operators where the filtering/matching behavior can be approximated by similar, alternate Operators. This group is made up of substring matching Operators that are being replaced by token-based Operators:
 
@@ -96,14 +97,13 @@ There are another set of deprecated version 1.0 Operators where the filtering/ma
 + ```bio_name_contains:``` → ```bio_name:```
 + ```bio_contains:``` →  ```bio:```
  
-So, any use of ```*_contains:``` Operators, and should be replaced with the non-contains version.
+So, any use of ```*_contains:``` Operators should be replaced with the non-contains version.
  
-We have found that very few customers are using these Operators to match on substrings, but rather are in fact filtering on complete tokens. Therefore we anticipate that the vast majority of PowerTrack users will be able to use the replacement Operators without altering current matching behavior. 
+We have found that very few customers are using these Operators to match on substrings, but rather are in fact filtering on complete tokens. Therefore we anticipate that the vast majority of PowerTrack users will be able to use the replacement Operators without affecting current matching behavior. 
 
-If you are using a quoted phrase, you will need to break you the clause into separate tokens. For example, the rule ```bio_contains:"software developer"``` would translate to ```(bio:software bio:developer)```. 
+If you are using a quoted phrase, the translation is simply an Operator replacement. For example, the rule ```bio_contains:"software developer"``` would translate to ```(bio:"software developer)```. 
 
-If on the off chance that you are using any of these Operators with a substring, you will need to rewrite the rule and attempt to match on the multiple complete tokens you want to match. For example, instead of ```Boulder bio_location_contains:co``` could become ```Boulder (bio_location:co OR bio_location:colo OR bio_location:colorado```.
-
+If on the off chance that you are using any of these Operators with a substring, you will need to rewrite the rule and attempt to match on the multiple complete tokens you want to match. For example, instead of ```Boulder bio_location_contains:co``` could become ```Boulder (bio_location:co OR bio_location:colo OR bio_location:colorado)```.
 
 ### Updates to the Rules API <a id="rules_api_changes" class="tall">&nbsp;</a>  
 
@@ -117,16 +117,47 @@ payloads. Rules API 1.0 has a data request payload size limit of 1 MB. With Rule
  
 #### Rule IDs 
 
-With version 1.0 a 'rule' has two attributes: 'value' and 'tag'. The value attribute contains the syntax of the rule, 
-while the 'tag' is a user-specified string used to provide a UUID (considered a best practice, btw), or a tag/label to 
-logically group rules (e.g., 'rule related to weather projects').
+With version 1.0 a 'rule' has two attributes: ```value``` and ```tag```. The value attribute contains the syntax of the rule, while the ```tag``` is a user-specified string used to either provide a universally-unique ID (UUID) (considered a best practice, btw), or a tag/label to logically group rules (e.g., "rule related to weather projects").
   
-PowerTrack 2.0 introduces a new rule attribute, a primary key ID generated when rule is created.
-    
-#### Rule Validation
- 
- https://gnip-api.twitter.com/rules/powertrack/accounts/<accountName>/<streamLabel>/validation.json
+PowerTrack 2.0 introduces a new rule attribute, a primary key ```id```, which is auto-generated when a rule is created. Unique Rule IDs are important since with PowerTrack 2.0 only rule IDs and tags are included in the ```gnip.matching_rules``` metadata. PowerTrack supports only 'long' rules, so the rule syntax (or the rule ```value```) is not returned in the matching rule array. Since the rule syntax is not returned, it is important to have a unique ID so the rule syntax can be looked up on the client-side. 
 
+Since this new ```id``` serves as an UUID, the rule *tag* no longer needs to play that role. Rule tags remain optional, but can be a convenient mechanism to logically group rules into sets, or add other metadata to a rule object.
+
+Here is an example of the new matching rules metadata that is included with all Tweets:
+
+```
+{
+  "gnip": {
+    "matching_rules": [
+      {
+        "tag": "Weather monitoring project",
+        "id": 714923996685316096
+      },
+      {
+        "tag": "Weather monitoring project",
+        "id": 714928183628271616
+      },
+      {
+        "tag": "Smart Cities project",
+        "id": 713928144542271723
+      }
+    ]
+  }
+}
+```
+
+#### Handling Invalid Rules When Adding Multiple Rules
+
+With version 1.0, a single invalid rule would result in an entire set of rules to be rejected, including all the valid rules. So if you had a set of 100 new rules, and only one was invalid, no rules would be added. With version 2.0, the Rules API instead adds all valid rules, while returned a list of invalid rules.  
+
+#### Rule Validation Endpoint
+
+PowerTrack 2.0 provides an rule validation endpoint: 
+ 
+ ``` https://gnip-api.twitter.com/rules/powertrack/accounts/<accountName>/<streamLabel>/validation.json ```
+ 
+This endpoint enables you to submit candidate rules and check whether the rule has valid syntax or not. 
+ 
 
 ### Writing code for the Rules API <a id="writing_code" class="tall">&nbsp;</a>
 
