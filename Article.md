@@ -2,17 +2,17 @@
 
 ### Introduction
 
-As announced last [date], a new version of Gnip's real-time PowerTrack, version 2.0, is [in the works]. Everyone using real-time PowerTrack will need to migrate their filtering rules from their version 1.0 systems over to version 2.0. 
+As announced last [date], a new version of Gnip's real-time PowerTrack, version 2.0, is [in the works]. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 in the near future. 
 
-This process is pretty straightforward, although there are some nuances. First, moving to 2.0 provides [new PowerTrack](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) Operators for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
+This process is pretty straightforward, although there are many details to consider. First, moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
-Beyond new Operators, there are other changes introduced with PowerTrack 2.0:
+Beyond new Operators, there are other rule changes introduced with PowerTrack 2.0:
 
 + Some Operators have been deprecated.
 + All language classifications are supplied by a Twitter system, and the Gnip language enrichment is being deprecated.
 + With hopes of providing a more logical grammar, some Operators have changed in name only.
 
-This article discusses several topics related to that effort:
+This article discusses several topics related to moving to PowerTrack version 2.0:
 
 + [Changes in PowerTrack Operators](#operator_changes).
 + [Updates to the Rules API](#rules_api_changes).
@@ -21,7 +21,7 @@ This article discusses several topics related to that effort:
  
 ### Changes in PowerTrack Operators <a id="operator_changes" class="tall">&nbsp;</a>
 
-PowerTrack 2.0 introduces a variety of changes to the Operators available for filtering Tweets of interest from the firehose. First, PowerTrack 2.0 introduces a set of new Operators, including emoji filterings, new expanded URL enrichments, and the ability to fine-tune media matching with Operators such as has:video and has:photo. See [HERE] for a complete list of what's new.
+PowerTrack 2.0 introduces a variety of changes to the Operators available for filtering Tweets of interest from the firehose. First, PowerTrack 2.0 introduces a set of new Operators, including the ability to match on emojis, new expanded URL enrichments, and the ability to fine-tune media matching with Operators such as has:videos and has:images. See [HERE](http://support.gnip.com/apis/powertrack2.0/overview.html#NewFeatures) for a complete list of what's new.
 
 Other changes include updates in simple grammar and language classification details, as well as a set of Operators that are being deprecated. 
 
@@ -29,15 +29,15 @@ Other changes include updates in simple grammar and language classification deta
 
 PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE]((http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators)) for the list of new Operators.
 
-The focus of this article, and the [migration tool](#rule_migrator), is how to migrate existing version 1.0 rules to 2.0. While these new Operators are not part of the rule translation discussion, incorporating the new Operators should be considered as you migrate to version 2. Based on the types of matching you are performing with version 1.0, here are some examples of filtering mechanisms that will likely benefir from these new Operators:
+The focus of this article, and the [migration tool](#rule_migrator), is how to migrate existing version 1.0 rules to 2.0. While these new Operators are not part of the rule translation discussion, incorporating the new Operators should be considered as you migrate to version 2. Based on the types of matching you are performing with version 1.0, here are some examples of filtering mechanisms that will likely benefit from these new Operators:
 
-+ If your rules use the ```url_contains``` Operator you'll probably want to consider using the new ```url_title``` and ```url_description``` Operators. These new Operators enable you to dig a bit deeper into the included link to match on more than just tokens and patterns of the URL.   
++ If your rules use the ```url_contains:``` Operator you'll probably want to consider using the new ```url_title:``` and ```url_description:``` Operators. These new Operators enable you to dig a bit deeper into the included link to match on more than just tokens and patterns of the URL. The URL itself may not hint at the subject of the linked to web page, and now with these Operators you can match the web page title and description.   
 + The ```has:media``` Operator operators on both native photos and videos. With version 2.0, you can make a distriction between these two media types with the ```has:videos``` and ```has:images``` Operators. 
-+ If you are matching on cashtags with version 1.0, you needed to make a choice between matching with quoted phrases ("\$CashTag\") or keyword-type ($CashTag) rule clauses. With version 2.0 there is a cashtag Operator that provides the definitive method for cashtags that part of the Tweet body. These cashtag entities are parsed from the Tweet body and placed in the ```twitter_entities:symbols``` JSON attribute. In this way, the new cashtag Operator is completely analagous to the hashtag Operator.     
++ If you are matching on cashtags with version 1.0, you needed to make a choice between matching with quoted phrases ("\$CashTag\") or keyword-type ($CashTag) rule clauses. With version 2.0 there is a cashtag Operator that provides the definitive method for cashtags that are included in the Tweet message. These cashtag entities are parsed from the Tweet body and placed in the ```twitter_entities:symbols``` JSON attribute. In this way, the new cashtag Operator is completely analagous to the hashtag Operator.     
 
 ### Language Operator Changes
  
-PowerTrack 1.0 supported two language classifications: the Gnip classification with the ```lang:``` Operator, and the Twitter classification with the ```twitter_lang:``` Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated, and there will be a single ```lang``` Operator powered by the Twitter system. The Twitter classification supports more languages (how many?), assigns a ```und``` (undefined) when no classification can be made (e.g., Tweets with only emojis), and in some cases was more accurate. 
+PowerTrack 1.0 supported two language classifications: the Gnip classification with the ```lang:``` Operator, and the Twitter classification with the ```twitter_lang:``` Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated, and there will be a single ```lang:``` Operator powered by the Twitter system. The Twitter classification supports 40 (!) more languages, assigns a ```und``` (undefined) when no classification can be made (e.g., Tweets with only emojis and URLs), and in some cases was more accurate. 
 
 If you have version 1.0 rules based on language classifications, here are some things to handle:
 
@@ -50,7 +50,7 @@ If you have version 1.0 rules based on language classifications, here are some t
       ```(lang:es twitter_lang:es)```  
     When migrating to version 2.0, the equivalent rule clause is ```lang:es```
 
-  + Many use-cases are helped by knowing whether the Tweet has a language classification, yet there is no need to know (at the filtering level) what the language is.
+  + Some use-cases are helped by knowing whether the Tweet has a language classification, while there is no need to know (at the filtering level) what the language is.
     + With PT 1.0, there was the ```has:lang``` rule clause to determine whether a classifaction is available
          ```has:lang (snow OR neige OR neve OR nieve OR snö OR снег)``` 
     + With PT 2.0, there is the ```-lang:und``` rule clause to do the same thing. 
@@ -65,10 +65,12 @@ If you have version 1.0 rules based on language classifications, here are some t
 
 These PowerTrack Operators are changing only in name:
 
-+ ```country_code``` --> ```place_country```
-+ ```profile_country_code``` --> ```profile_country```
++ ```country_code``` → ```place_country```
++ ```profile_country_code``` → ```profile_country```
  
-So, if you have any rules that use these Operators, rule syntax updates will be necessary. 
+So, if you have any rules that use these Operators, a simple Operator replacement is necessary. 
+
++ The version 1.0 rule clause ```(country_code:us OR profile_country_code:us)``` becomes ```(place_country:us OR profile_country:us)``` with version 2.0.
 
 ##### Deprecated Operators
 
@@ -79,19 +81,20 @@ If your rule set includes any of the following Operators, those clauses will nee
 + ```klout_topic:```
 + ```klout_topic-contains:```
 + ```bio_lang```
-+ ```has:profile_geo_region```
-+ ```has:profile_geo_subregion```
-+ ```has:profile_geo_locality```
++ ```has:profile_geo_region```*
++ ```has:profile_geo_subregion```*
++ ```has:profile_geo_locality```*
+       * Note that ```has:profile_geo``` is still supported in version 2.0. 
 
 There are another set of deprecated version 1.0 Operators where the filtering/matching behavior can be approximated by similar, alternate Operators. This group is made up of substring matching Operators that are being replaced by token-based Operators:
 
-+ ```bio_location_contains:``` --> ```bio_location:```
-+ ```place_contains:``` --> ```place:```
-+ ```profile_region_contains:``` --> ```profile_region:```
-+ ```profile_locality_contains:``` --> ```profile_locality:```
-+ ```profile_subregion_contains:``` --> ```profile_subregion:```
-+ ```bio_name_contains:``` --> ```bio_name:```
-+ ```bio_contains:``` -->  ```bio:```
++ ```bio_location_contains:``` → ```bio_location:```
++ ```place_contains:``` → ```place:```
++ ```profile_region_contains:``` → ```profile_region:```
++ ```profile_locality_contains:``` → ```profile_locality:```
++ ```profile_subregion_contains:``` → ```profile_subregion:```
++ ```bio_name_contains:``` → ```bio_name:```
++ ```bio_contains:``` →  ```bio:```
  
 So, any use of ```*_contains:``` Operators, and should be replaced with the non-contains version.
  
