@@ -64,6 +64,11 @@ class RulesMigrator
 		 @options[:rules_folder] = options['options']['rules_folder']
 		 @options[:verbose] = options['options']['verbose']
 
+		 #Create folder if they do not exist.
+		 if (!File.exist?(@options[:rules_folder]))
+			Dir.mkdir(@options[:rules_folder])
+		 end
+
 	  rescue
 		 AppLogger.log_error "Error loading settings from #{file}. Check settings."
 		 return nil
@@ -72,7 +77,6 @@ class RulesMigrator
 
 
    #Self-discover what version/publisher of streams we are working with.
-   #
    def check_systems(source_url, target_url)
 
 	  continue = true
@@ -90,7 +94,7 @@ class RulesMigrator
 	  end
 
 	  if @source_version > @target_version
-		 continue = false
+		 continue = false #No support for down versioning...
 	  elsif @source_version == @target_version
 		 @do_rule_translation = false
 
@@ -116,6 +120,9 @@ class RulesMigrator
 
 	  indexes.each do |index|
 		 code = rule[(index + substring.length), 2]
+		 if code == "un"
+			code = "und"
+		 end
 		 codes << code
 	  end
 
@@ -168,7 +175,7 @@ class RulesMigrator
 
    def handle_lang_pair rule, pattern
 
-	  AppLogger.log_info "Rule (before): #{rule}"
+	  #AppLogger.log_info "Rule (before): #{rule}"
 
 	  if rule_has_pattern?(rule, pattern)
 		 AppLogger.log_info "Has #{pattern}"
@@ -181,8 +188,21 @@ class RulesMigrator
 		 end
 	  end
 
-	  AppLogger.log_info "Rule (after): #{rule}"
-	  AppLogger.log_info '----------------------'
+	  #AppLogger.log_info "Rule (after): #{rule}"
+	  #AppLogger.log_info '----------------------'
+
+	  rule
+
+   end
+
+   def handle_common_duplicate_patterns rule, language
+
+	  #lang:xx OR lang:und OR lang:xx
+	  rule.gsub! "lang:#{language} OR lang:und OR lang:#{language}", "lang:#{language} OR lang:und"
+
+	  rule.gsub! "lang:#{language} OR lang:#{language}", "lang:#{language}"
+
+	  rule.gsub! "lang:#{language} lang:#{language}", "lang:#{language}"
 
 	  rule
 
@@ -210,11 +230,27 @@ class RulesMigrator
 
    end
 
+   def eliminate_duplicate_languages rule
+
+	  languages = collect_languages rule
+
+	  languages.each do |language|
+
+		 if rule.scan("lang:#{language}").count > 1
+
+			puts "have double #{language}"
+
+			rule = handle_common_duplicate_patterns rule, language
+
+		 end
+
+	  end
+
+	  rule
+   end
+
    def handle_has_lang(rule)
-	  AppLogger.log_warn "Rule (#{rule}) has 'has:geo', replacing with 'lang:und' and negating usage."
-
 	  rule.gsub!('-has:lang', 'lang:und')
-
 	  rule.gsub!('has:lang', '-lang:und')
 
 	  rule
@@ -229,7 +265,7 @@ class RulesMigrator
 	  gnip_lang_clauses = (rule.scan(/[ ()]lang:/).count)
 	  gnip_lang_clauses += 1 if rule.start_with?('lang:')
 
-	  #No language clauses, sweet.
+	  #No language clauses?
 	  if twitter_lang_clauses == 0 and gnip_lang_clauses == 0
 		 return rule
 	  end
@@ -248,18 +284,18 @@ class RulesMigrator
 	  #Shortcut is to replace the twitter_lang: clauses with lang:.
 	  #The longer answer is to eliminate twitter_langs in ORs and ANDs and clean up.
 	  AppLogger.log_debug "Have mix of lang and twitter_lang Operators..."
-	  AppLogger.log_debug "Language rule (before): #{rule}"
+	  #AppLogger.log_debug "Language rule (before): #{rule}"
 
 	  rule = handle_common_lang_patterns rule
 
 	  #First, snap to lang:.
 	  rule.gsub!('twitter_lang:', 'lang:')
 
-	  #if duplicate_languages?(rule)
-	  #		 rule = eliminate_duplicate_ORed_languages rule
-	  #end
+	  if duplicate_languages?(rule)
+		 rule = eliminate_duplicate_languages rule
+	  end
 
-	  AppLogger.log_debug "Language rule (after): #{rule}"
+	  #AppLogger.log_debug "Language rule (after): #{rule}"
 
 	  rule
 
@@ -279,24 +315,16 @@ class RulesMigrator
 	  rule.gsub!('profile_subregion_contains:', 'profile_subregion:')
 
 	  rule
-
    end
 
    #Order here matters: check profile_country_code first, then check country_code.
    def handle_country_code_operators(rule)
 
-	  if rule_has_pattern? rule, /profile_country_code:/
-		 rule.gsub!('profile_country_code:', 'profile_country_code:')
-		 #rule.gsub!('profile_country_code:','profile_country:') #TODO: Synch with PT 2.0 deploys.
-	  end
+	  rule.gsub!('profile_country_code:', 'profile_country:')
 
-	  if rule_has_pattern? rule, /[ ,()]country_code/
-		 rule.gsub!('country_code:', 'place_country_code:')
-		 #rule.gsub!('country_country_code:','place_country:') #TODO: Synch with PT 2.0 deploys.
-	  end
+	  rule.gsub!('country_code:', 'place_country:')
 
 	  rule
-
    end
 
    #Handle any rule translations.
@@ -317,7 +345,7 @@ class RulesMigrator
 		 rule = handle_contains_operators rule
 	  end
 
-	  #TODO: Keep in synch with PT 2.0 deploys (2016-03-18).
+
 	  if rule.include? 'country_code:'
 		 rule = handle_country_code_operators rule
 	  end
@@ -402,7 +430,7 @@ class RulesMigrator
 
 	  translated_rules
    end
-   
+
    def make_rules_file(request)
 	  puts request
 
@@ -437,7 +465,7 @@ class RulesMigrator
 	  requests.each do |request|
 
 		 if @options[:write_rules_to] == 'files'
-			
+
 			make_rules_file request
 
 		 else # writing to 'api', so POST the requests.
@@ -512,7 +540,6 @@ class RulesMigrator
 	  #Note any rules that needed to be 'translated'.
 
    end
-   
 
 
 end
