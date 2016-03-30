@@ -12,12 +12,17 @@ def parseOptions(o)
    settings['target'] = nil
    settings['source'] = nil
    settings['verbose'] = nil
+   settings['write_rules_to'] = nil
+   settings['load_files'] = nil
 
    #Passing in a config file.... Or you can set a bunch of parameters.
    o.on('-a ACCOUNT', '--account', 'Account configuration file (including path) that provides OAuth settings.') { |account| settings['account']= account }
    o.on('-c CONFIG', '--config', 'Settings configuration file (including path) that provides API settings.') { |config| settings['config'] = config }
-   o.on('-s SOURCE', '--source', '') { |source| settings['source'] = source }
-   o.on('-t TARGET', '--target', '') { |target| settings['target'] = target }
+   o.on('-s SOURCE', '--source', "Rules API URL for GETting 'Source' rules.") { |source| settings['source'] = source }
+   o.on('-t TARGET', '--target', "Rules API URL for POSTing rules to 'Target' system.") { |target| settings['target'] = target }
+   o.on('-w WRITE', '--write', "Write rules to either 'files' or Target Rules 'api'") { |write| settings['write_rules_to'] = write }
+   o.on('-l', '--load', "If inbox has files, load them into 'Target' system") { |load| settings['load_files'] = load }
+
    o.on('-v', '--verbose', 'When verbose, output all kinds of things, each request, most responses, etc.') { |verbose| $verbose = verbose }
    o.on('-h', '--help', 'Display this screen.') do
 	  puts o #Help screen.
@@ -32,9 +37,10 @@ end
 def set_defaults settings
 
    #If not passed in, use some defaults.
-   settings['account'] = "../config/account.yaml" if settings['account'].nil?
+   settings['account'] = '../config/account.yaml' if settings['account'].nil?
    settings['config'] = '../config/options.yaml' if settings['config'].nil?
    settings['verbose'] = true if settings['verbose'].nil?
+   settings['write_rules_to'] = 'files' if settings['write_rules_to'].nil?
 
    settings
 end

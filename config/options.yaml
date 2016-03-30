@@ -1,13 +1,14 @@
-source:
+source: #Source stream for rules.
   url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/<LABEL>/rules.json
 
-target:
+target: #Target stream for rules.
   url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/<LABEL>.json
 
 options:
-  write_rules_to: files #options: files, api
-  rules_folder: ./rules
-  verbose: true
+  write_rules_to: files         #options: files, api
+  rules_folder: ./rules         #If generating rule files, where to write them.
+  load_files: false             #If we find files in 'rules_folder' load those into Target system.
+  verbose: true                 #When true, the app writes more to system out.
   
 logging:
   name: rule_migrator.log

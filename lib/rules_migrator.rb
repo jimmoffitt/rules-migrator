@@ -25,7 +25,7 @@ class RulesMigrator
 	  @source = {:url => '', :rules => [], :num_rules => 0, :name => 'Source'}
 	  @target = {:url => '', :rules => [], :num_rules_before => 0, :num_rules_after => 0, :name => 'Target'}
 	  @credentials = {:user_name => '', :password => ''}
-	  @options = {:verbose => true, :write_rules_to => 'api', :rules_folder => './rules'}
+	  @options = {:verbose => true, :write_rules_to => 'api', :rules_folder => './rules', :load_files => false}
 
 	  set_credentials(accounts)
 	  set_options(settings)
@@ -62,6 +62,7 @@ class RulesMigrator
 
 		 @options[:write_rules_to] = options['options']['write_rules_to']
 		 @options[:rules_folder] = options['options']['rules_folder']
+		 @options[:load_files] = options['options']['load_files']
 		 @options[:verbose] = options['options']['verbose']
 
 		 #Create folder if they do not exist.
