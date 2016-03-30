@@ -1,4 +1,4 @@
-# Migrating PowerTrack 1.0 Rules to 2.0
+# Migrating PowerTrack Rules From Version 1.0 to 2.0
 
 ### Introduction
 
