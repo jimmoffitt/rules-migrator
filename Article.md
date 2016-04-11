@@ -154,30 +154,16 @@ PowerTrack 2.0 provides a rule validation endpoint:
  
 This endpoint enables you to submit candidate rules and check whether the rule has valid syntax or not. 
  
+ 
 ### Example 'Rule Migrator' Application <a id="rule_migrator" class="tall">&nbsp;</a>
 
-As a group focused on supporting Gnip customers, we are avid 'in-house' users of real-time PowerTrack. As developer advocates we work directly with Twitter data and often [write data stories](https://blog.gnip.com/tweeting-rain-part-4-tweets-2013-colorado-flood/). As a result we have curated many sets of operators that often have a geographic focus. So I sat down to write a tool that could help us translate and migrate PowerTrack 1.0 rules to version 2.0. The [Rules Migrator]([https://github.com/jimmoffitt/rules-migrator]) tool is very much a prototype, a 'talking point' in the broader discussion of filtering the firehose with PowerTrack. If you improve or extend or refactor, or whatever, this code base, please share your efforts.
+As a group focused on supporting Gnip customers, we are avid 'in-house' users of real-time PowerTrack. As developer advocates we work directly with Twitter data and often [write data stories](https://blog.gnip.com/tweeting-rain-part-4-tweets-2013-colorado-flood/). As a result we have curated many sets of operators in support for a wide variety of use-cases. 
 
-[https://github.com/jimmoffitt/rules-migrator]
+So we started to develop a tool that could help us translate and migrate PowerTrack 1.0 rules to version 2.0. The result of that effort is available [HERE](https://github.com/jimmoffitt/rules-migrator) on GitHub. The project's README describes how the tool works and the type of 1.0 → 2.0 rule translations it handles. Note that this tool can also be used to, for example, migrate rules between same-version streams, and from real-time to Replay streams.  
 
-
-
-
+This tool is very much a prototype. If you improve or extend or refactor, or whatever, this code base, please share your efforts.
 
 
-###### ----------
-
-### Writing code for the Rules API <a id="writing_code" class="tall">&nbsp;</a>
-
-All real-time PowerTrack customers need to integrate with the Rules API. While the Gnip Console provides a Rules API user-interface, it is not intended for production systems, and is instead provided to enable new customers to quickly create some rules in order to start receiving real-time data. This Rules user-interface does not support the entry or display of rule ```tags``` or ```ids```. It also will not display rules if you have more than 1,000 rules (and the vast majority of PowerTrack users have more than 1,000 rules). 
-
-
-
-Many reasons to do so... Synching systems... between your system and Gnip's. Between real-time and Replay streams. Or, 
-as in an upcoming example, migrating 1.0 rules to a 2.0 stream.  
-
-The Rules API is a RESTful API used to manage PowerTrack real-time filters. It supports a small set of methods used to 
-list, add and delete rules. 
 
 
 
