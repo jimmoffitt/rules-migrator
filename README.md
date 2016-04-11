@@ -17,28 +17,29 @@ This tool has three main use-cases:
  
 Given the high volumes of real-time Twitter data, it is highly recommended that rules are reviewed before adding to a live stream. If you are deploying a new PowerTrack stream, this tool can be use to migrate the rules, then verify your ruleset before connecting to the new stream 
 
-For more information on migrating PowerTrack rules from one stream to another, see [this Gnip soppurt article].
+For more information on migrating PowerTrack rules from one stream to another, see [this Gnip support article](http://support.gnip.com/articles/rules-migrator.html).
 
 The rest of this document focuses on the Ruby example app used to migrate rules.
 
 ## User-stories  <a id="user-stories" class="tall">&nbsp;</a>
 
-Here are some common user-stories in mind when writing this app:
+Here are some common user-stories that drove the development of this app:
 
 + As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
-+ As a real-time PowerTrack customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
++ As a real-time PowerTrack (1.0 or 2.0) customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
 + As a Replay customer, I want to clone my real-time rules to my Replay stream.
 
 ## Features  <a id="features" class="tall">&nbsp;</a>
 
-+ Translates rules when necessary. 
++ When migrating rules from version 1.0 to 2.0, translates rules when possible.
+  + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated, and are instead logged.  
 + Migrates rules tags.
 + Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
-+ Provides options for:
++ Provides 'output' options for:
   + Writing write rules JSON to a local file.
   + POSTing rules to the target system using the PowerTrack Rules API.
 
-### Fundamental Details
+### Fundamental Details <a id="fundamental-details" class="tall">&nbsp;</a>
 
 + No rules are deleted.
 + Code disallows adding rules to the Source system.
@@ -50,17 +51,118 @@ Here are some common user-stories in mind when writing this app:
   
   **NOTE:** 2.0 → 1.0 migrations are not supported. 
   
-+ Process can either 
-    + Add rules to the Target system using the Rules API.
-    + Output Target rules JSON to a local file for review.  
++ Process can either: 
+  + Add rules to the Target system using the Rules API.
+  + Output Target rules JSON to a local file for review.  
+
+
+## Example Usage Patterns
+
++ Translate a set of version 1.0 rules, write them to a local JSON file, and review.
+
++ Load a generated JSON file to a 'Target' stream.
+
++ Translate a set of version 1.0 rules straight to a version 2.0 'Target' stream.
+
++ Migrate a set of PowerTrack rules from a 'dev' stream straight to a 'prod' stream.
+
++ I had a client-side network operational problem and want to use Replay to recover data I missed in real-time.  
+
+
+## Getting Started  <a id="getting-started" class="tall">&nbsp;</a>
+
++ Get some Gnip PowerTrack streams and rule sets you need to manage!
++ Deploy client code
+    + Clone this repository.
+    + Using the Gemfile, run bundle.
++ Configure both the Accounts and Options configuration files.
+    + Config ```accounts.yaml``` file with account name, username, and password.
+    + Config ```options.yaml``` file with processing options, including the Rules API URLs for the 'Source' and 'Target' systems. 
+        + See the [Configuration Details](#configuration-details) section for the details.
++ Execute the Client using [command-line options](#command-line-options).
+    + To confirm everything is ready to go, you can run the following command:
+    
+    ```
+    $ruby rule_migrator.rb -h
+    ```
+    
+    If you see a help 'screen' with command-line options, you should be good to go.
+    
+    
+### Configuration details <a id="configuration-details" class="tall">&nbsp;</a>
+
+There are two files used to configure the Rule Migrator. The ```account.yaml``` contains your 
+Gnip account name, username, and password. The ```options.yaml``` file contains all the application options, including the Rule API URLs of your Source and Target streams, along with logging settings.
+
+There are also a set of [command-line parameters](#command-line-options) that will override settings from the ```options.yaml``` file. See the 
+
+#### Account credentials <a id="account-credentials" class="tall">&nbsp;</a>
+
+```
+ account:
+   account_name: my_account_name
+   user_name: my_username_email
+   password:
+```
+
+#### Application Options <a id="application-options" class="tall">&nbsp;</a>
+
+
+
+```
+ source:
+   url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/<LABEL>/rules.json
+
+ target:
+   url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/<LABEL>.json
+
+ options:
+   write_rules_to: files         #options: files, api
+   rules_folder: ./rules         #If generating rule files, where to write them.
+   load_files: false             #If we find files in 'rules_folder' load those into Target system.
+   verbose: true                 #When true, the app writes more to system out.
+  
+ logging:
+   name: rule_migrator.log
+   log_path: ./log
+   warn_level: debug
+   size: 1 #MB
+   keep: 2
+```
+
+#### Command-line Options <a id="command-line-options" class="tall">&nbsp;</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## 1.0 → 2.0 Rule Translations  <a id="translations" class="tall">&nbsp;</a>
 
-There are many PowerTrack Operator changes with 2.0. New Operators have been introduced, some have been deprecated, and some have had a grammar/name update. When migrating 1.0 rules to 2.0, this application attempts to translate when it can, although there will be cases when the automatic translation will not be performed. [TODO: what cases? itemize?] 
-+ Deprecated Operators. 
+There are many PowerTrack Operator changes with 2.0. New Operators have been introduced, some have been deprecated, and some have had a grammar/name update. See [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html) and [HERE](http://support.gnip.com/articles/rules-migrator.html) for more details.
 
-In all cases, the rules that can and can not be translated are logged. Also, in the cases where a rule can not be translated the 2.0 Rules API will respond with a list of rules that could not be added. This list will be presented to the user and logged. [Test/code 
- 
+When migrating 1.0 rules to 2.0, this application attempts to translate when it can, although there will be cases when the automatic translation will not be performed. For example, no version 1.0 rule which includes a deprecated Operator will be translated. In all cases, the rules that can and can not be translated are logged. 
+
+
+
+
+
+
+
+
+
+
+
+
  
  In PowerTrack 1.0, there were two different language classification systems and corresponding Operators. Gnip first introduced its language classification and the ```lang:``` Operator in March, 2012. Twitter launched its language classification in [DATE?], and the ```twitter_lang:``` Operator was introduced to PowerTrack. The Twitter language classification handles many more languages, and also indicates when a language was could not be identified by assigning a 'und' result. 
 
@@ -112,93 +214,12 @@ Other substring matching Operators are being equivalent token-based Operators. T
 + has:profile_geo_locality
 
 
-## Example Usage Patterns
-
-+ Translate a set of vesion 1.0 rules, write them to a local JSON file, and review.
 
 
-+ Migrate a set of PowerTrack rules from a 'dev' stream to a 'prod' stream.
 
 
-+ I had a client-side network operational problem and want to use Replay to recover data I missed in real-time.  
+### Code Details <a id="code-details" class="tall">&nbsp;</a>
 
-
-## Getting Started  <a id="getting-started" class="tall">&nbsp;</a>
-
-+ Get some Gnip PowerTrack streams and rul esets you need to manage!
-+ Deploy client code
-    + Clone this repository.
-    + Using the Gemfile, run bundle.
-+ Configure both the Accounts and Options configuration files.
-    + Config ```accounts.yaml``` file with OAuth keys and tokens.
-    + Config ```options.yaml``` file with processing options, Engagement Types, and Engagement Groupings.
-    + See the [Configuring Client](#configuring-client) section for the details.
-+ Execute the Client using [command-line options](#command-line-options).
-    + To confirm everything is ready to go, you can run the following command:
-    ```
-    $ruby rule_migrator.rb -test 
-    ```
-    The following output is at least a sign that the code is ready to go:
-    
-    ```
-Testing rule_migrator, ready to use...
-    ```
-### Configuration details
-
-
-#### Account credentials
-
-```
-account:
-  account_name: my_account_name
-  user_name: my_username_email
-  password:
-```
-
-#### Options
-
-```
-source:
-  url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/<LABEL>/rules.json
-
-target:
-  url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/<LABEL>.json
-
-options:
-  write_rules_to: files #options: files, api
-  inbox: ./inbox
-  verbose: true
-  
-logging:
-  name: rule_migrator.log
-  log_path: ./log
-  warn_level: debug
-  size: 1 #MB
-  keep: 2
-```
-
-##### Source and Target Systems
-
-```
-
-source:
-  url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/prod/rules.json
-
-target:
-  url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/prod.json
-
-```
-
-#### Options
-
-```
-options:
-  write_rules_to: files #options: files, api
-  inbox: ./inbox
-  verbose: true
-```
-
-### Code Details
 
 
 
