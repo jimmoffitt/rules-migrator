@@ -9,6 +9,7 @@ module AppLogger
                   :name, 
                   :log_path,
                   :warn_level,
+				  :info_chatter, #some simple apps or scripts may want to echo info level, even if verbose is false.
                   :size, 
                   :keep, 
                   :roll_by,
@@ -16,6 +17,8 @@ module AppLogger
                   
 
     def set_config(verbose=nil)
+	   
+	  @info_chatter = false
 
       if verbose != nil
          @verbose = verbose
@@ -85,7 +88,7 @@ module AppLogger
       verbose = @verbose if verbose.nil?
 
       AppLogger.log.info(msg)
-      puts msg if verbose
+      puts msg if (verbose or @info_chatter)
     end
 
     def log_warn(msg, verbose = nil)
