@@ -16,6 +16,7 @@ class RulesMigrator
 				 :target,
 				 :target_version,
 				 :do_rule_translation,
+				 :rules_translated,
 				 :credentials,
 				 :options,
 				 :http
@@ -26,6 +27,7 @@ class RulesMigrator
 	  @target = {:url => '', :rules => [], :num_rules_before => 0, :num_rules_after => 0, :name => 'Target'}
 	  @credentials = {:user_name => '', :password => ''}
 	  @options = {:verbose => true, :write_rules_to => 'api', :rules_folder => './rules', :load_files => false}
+	  @rules_translated = []
 
 	  set_credentials(accounts)
 	  set_options(settings)
@@ -152,7 +154,7 @@ class RulesMigrator
 		 language_codes << code.downcase
 	  end
 
-	  puts "Rule #{rule} has #{language_codes.uniq.count} unique language codes: #{language_codes.uniq.to_s}"
+	  AppLogger.log_debug "Rule #{rule} has #{language_codes.uniq.count} unique language codes: #{language_codes.uniq.to_s}"
 
 	  if language_codes.uniq.count == 1
 		 true
@@ -179,7 +181,7 @@ class RulesMigrator
 	  #AppLogger.log_info "Rule (before): #{rule}"
 
 	  if rule_has_pattern?(rule, pattern)
-		 AppLogger.log_info "Has #{pattern}"
+		 AppLogger.log_debug "Has #{pattern}"
 
 		 if only_one_language?(rule)
 			code = get_language_codes_unique rule
@@ -239,12 +241,10 @@ class RulesMigrator
 
 		 if rule.scan("lang:#{language}").count > 1
 
-			puts "have double #{language}"
+			AppLogger.log_debug "Have double #{language}"
 
 			rule = handle_common_duplicate_patterns rule, language
-
 		 end
-
 	  end
 
 	  rule
@@ -423,8 +423,14 @@ class RulesMigrator
 
 		 rule_translated = {}
 		 rule_translated['tag'] = rule['tag']
+		 
+		 rule_before = Marshal.load(Marshal.dump(rule))
 
 		 rule_translated['value'] = check_rule(rule['value'])
+
+		 if rule_before['value'] != rule_translated['value']
+			@rules_translated << "'#{rule_before['value']}' translated to '#{rule_translated['value']}'"
+		 end
 
 		 translated_rules << rule_translated
 	  end
@@ -445,12 +451,15 @@ class RulesMigrator
 	  until rules_written
 		 if not File.file?("#{@options[:rules_folder]}/#{filename}.json")
 			File.open("#{@options[:rules_folder]}/#{filename}.json", 'w') { |file| file.write(request) }
+			AppLogger.log_info "Created #{@options[:rules_folder]}/#{filename}.json file..."
 			rules_written = true
 		 else
 			num += 1
 			filename = filename_base + "_" + num.to_s
 		 end
 	  end
+
+
    end
 
 
@@ -471,21 +480,33 @@ class RulesMigrator
 
 		 else # writing to 'api', so POST the requests.
 
-
 			begin
 			   response = @http.POST(target[:url], request)
+			   response_json = response.body.to_json
+			   response_hash = JSON.parse(response.body)
 
 			   AppLogger.log_debug "response code: #{response.code} | message: #{response.message} "
 
-			   if response.code == 200
+			   if response.code == '200' or response.code == '201'
 				  AppLogger.log_info "Successful rule post to target system."
 
+				  #Although we have a 201, it is possible some were not created since they already exist.
+				  AppLogger.log_info "#{response_hash['summary']['created']} rules were created."
+
+				  if response_hash['summary']['not_created'] > 0
+					 AppLogger.log_info "#{response_hash['summary']['not_created']} rules were NOT created."
+
+					 response_hash['detail'].each do |detail|
+						if detail['created'] == false
+						   AppLogger.log_info "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
+						end
+					 end
+				  end
 
 				  #"{"summary":{"created":8,"not_created":5},"detail":[{"rule":{"value":"(lang:en OR lang:en OR lang:und) Gnip","tag":null,"id":710911249710653441},"created":true},{"rule":{"value":"(place:minneapolis OR bio:minnesota) (snow OR rain)","tag":null,"id":710911249735811073},"created":true},{"rule":{"value":"-lang:und (snow OR rain)","tag":null,"id":710911249735753728},"created":true},{"rule":{"value":"(lang:en) place_country_code:us bio:Twitter","tag":null,"id":710911249706409985},"created":true},{"rule":{"value":"(lang:en OR lang:und OR lang:en) Gnip","tag":null,"id":710911249735749632},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null,"id":710911249702191104},"created":true},{"rule":{"value":"lang:en Gnip","tag":null,"id":710911249735757825},"created":true},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null,"id":710911249706422273},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"lang:en Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"}]}"
 
 			   else #TODO: handle errors. 
 
-				  response_json = response.body.to_json
 
 				  puts response_json
 
@@ -515,14 +536,18 @@ class RulesMigrator
    end
 
 
-   def load_rules system
+   def load_rules system, before = true
 
 	  system[:rules] = get_rules(system)
 
 	  if system[:rules].nil?
 		 AppLogger.log_error "Problem checking #{system[:name]} rules."
 	  else
-		 system[:num_rules_before] = system[:rules].count
+		 if before
+			system[:num_rules_before] = system[:rules].count
+		 else
+			system[:num_rules_after] = system[:rules].count
+		 end
 	  end
 
 	  system[:rules]
@@ -535,12 +560,20 @@ class RulesMigrator
 	  puts "Rule Migrator summary"
 	  puts "     Source[:url] = #{@source[:url]}"
 	  puts "     Target[:url] = #{@target[:url]}"
-
+	  puts ''
 	  puts '---------------------'
+	  puts ''
+	  puts "Source system had #{@source[:num_rules_before]} rules."
+	  puts "Target system had #{@target[:num_rules_before]} rules before, and #{@target[:num_rules_after]} rules after."
 
 	  #Note any rules that needed to be 'translated'.
-
+	  if @rules_translated.count > 0
+		 
+		 puts "#{rules_translated.count} rules were translated:"
+		 @rules_translated.each do |rule|
+			puts "   #{rule}"
+		 end
+	  end
    end
-
 
 end
