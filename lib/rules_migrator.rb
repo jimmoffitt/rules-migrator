@@ -22,6 +22,7 @@ class RulesMigrator
 				 :rules_translated,
 				 :rules_already_existing,
 				 :rules_invalid,           #Valid 1.0 rules not passing new 2.0 syntax validators.
+				 :rules_deprecated,
 				 :credentials,
 				 :options,
 				 :rules_translator,
@@ -36,6 +37,7 @@ class RulesMigrator
 	  @rules_translated = []
 	  @rules_invalid = []
 	  @rules_already_existing = []
+	  @rules_deprecated = []
 
 	  set_credentials(accounts)
 	  set_options(settings)
@@ -212,6 +214,13 @@ class RulesMigrator
 	  translated_rules = []
 
 	  rules.each do |rule|
+		 
+		 #Remove any rules with deprecated Operator.
+		 if @rules_translator.rule_has_deprecated_operator? rule
+			@rules_deprecated << rule
+			rules.delete rule
+			next
+		 end
 
 		 rule_translated = {}
 		 rule_translated['tag'] = rule['tag']
@@ -337,7 +346,7 @@ class RulesMigrator
 						elsif detail['created'] == false and detail['message'].nil?
 						   AppLogger.log_debug "Rule '#{detail['rule']['value']}' was not created because it already exists."
 
-						   @rules_already_existing << detail['rule']['value']
+						   @rules_already_existing << detail['rule']
 
 						end
 					 end
@@ -446,7 +455,19 @@ class RulesMigrator
 
 		 puts "#{@rules_already_existing.count} Source rules already exist in Target system."
 		 @rules_already_existing.each do |rule|
-			puts "   #{rule}"
+			puts "   #{rule['value']}"
+		 end
+	  end
+	  puts ''
+
+	  puts ''
+	  #Rules that already existed.
+	  puts '---------------------'
+	  if @rules_deprecated.count > 0
+
+		 puts "#{@rules_deprecated.count} Source rules contain deprecated Operators with no equivalent in version 2.0:."
+		 @rules_deprecated.each do |rule|
+			puts "   #{rule['value']}"
 		 end
 	  end
 	  puts ''
