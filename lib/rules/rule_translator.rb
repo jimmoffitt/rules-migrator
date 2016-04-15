@@ -2,9 +2,19 @@
 
 class RuleTranslator
    
-	OPERATORS_DEPRECATED = ['klout_topics:']
+	OPERATORS_DEPRECATED = ['klout_topics:', 'klout_topic_contains:', 'bio_lang:', 'has:profile_geo_region', 'has:profile_geo_subregion', 'has:profile_geo_locality']
 
-   def rule_has_deprecated_operator? rule, deprecated_operators
+   def rule_has_deprecated_operator? rule
+	  deprecated_operators = ['klout_topics:', 
+							  'klout_topic_contains:', 
+							  'bio_lang:', 
+							  'has:profile_geo_region', 
+							  'has:profile_geo_subregion', 
+							  'has:profile_geo_locality']
+	  
+	  if deprecated_operators.any? { |operator| rule['value'].include?(operator) }
+		 return true
+	  end
 
    end
 
@@ -230,7 +240,6 @@ class RuleTranslator
    #Explicitly not handling Klout, bio_lang, and has:profile* Operators. These will be passed through and 
    #handled by the Rules API (and in the case of 2.0, identified as a rule NOT added).
    def check_rule(rule)
-
 
 	  if rule.include? 'twitter_lang'
 		 rule = handle_lang_operators rule
