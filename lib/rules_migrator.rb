@@ -1,10 +1,13 @@
-require_relative '../common/app_logger'
-require_relative "../common/restful"
+require_relative './common/app_logger'
+require_relative './common/restful'
+require_relative './rules/rule_translator'
 
 require 'json'
 require 'yaml'
+require 'objspace'
 
 class RulesMigrator
+
 
    MAX_POST_DATA_SIZE_IN_MB_v1 = 1
    MAX_POST_DATA_SIZE_IN_MB_v2 = 5
@@ -17,8 +20,11 @@ class RulesMigrator
 				 :target_version,
 				 :do_rule_translation,
 				 :rules_translated,
+				 :rules_already_existing,
+				 :rules_invalid,           #Valid 1.0 rules not passing new 2.0 syntax validators.
 				 :credentials,
 				 :options,
+				 :rules_translator,
 				 :http
 
    #Gotta supply account and settings files.
@@ -28,10 +34,14 @@ class RulesMigrator
 	  @credentials = {:user_name => '', :password => ''}
 	  @options = {:verbose => true, :write_rules_to => 'api', :rules_folder => './rules', :load_files => false}
 	  @rules_translated = []
+	  @rules_invalid = []
+	  @rules_already_existing = []
 
 	  set_credentials(accounts)
 	  set_options(settings)
 	  set_http
+	  
+	  @rules_translator = RuleTranslator.new
    end
 
    def set_http
@@ -78,7 +88,6 @@ class RulesMigrator
 	  end
    end
 
-
    #Self-discover what version/publisher of streams we are working with.
    def check_systems(source_url, target_url)
 
@@ -109,279 +118,59 @@ class RulesMigrator
 
    end
 
-   def rule_has_pattern? rule, pattern
-	  match = pattern.match rule
-	  true unless match.nil?
-   end
-
-   def collect_languages rule
-
-	  substring = 'lang:'
-	  indexes = rule.enum_for(:scan, substring).map { $~.offset(0)[0] }
-
-	  codes = []
-
-	  indexes.each do |index|
-		 code = rule[(index + substring.length), 2]
-		 if code == "un"
-			code = "und"
-		 end
-		 codes << code
-	  end
-
-	  language_codes = []
-
-	  codes.each do |code|
-		 language_codes << code.downcase
-	  end
-
-	  language_codes
-
-   end
-
-   def get_language_codes_unique rule
-	  language_codes = collect_languages rule
-	  language_codes.uniq
-   end
-
-   def only_one_language? rule
-
-	  codes = collect_languages rule
-
-	  language_codes = []
-
-	  codes.each do |code|
-		 language_codes << code.downcase
-	  end
-
-	  AppLogger.log_debug "Rule #{rule} has #{language_codes.uniq.count} unique language codes: #{language_codes.uniq.to_s}"
-
-	  if language_codes.uniq.count == 1
-		 true
-	  else
-		 false
-	  end
-
-   end
-
-   def duplicate_languages? rule
-
-	  language_codes = collect_languages rule
-
-	  if language_codes.count == language_codes.uniq.count
-		 false
-	  else
-		 true
-	  end
-
-   end
-
-   def handle_lang_pair rule, pattern
-
-	  #AppLogger.log_info "Rule (before): #{rule}"
-
-	  if rule_has_pattern?(rule, pattern)
-		 AppLogger.log_debug "Has #{pattern}"
-
-		 if only_one_language?(rule)
-			code = get_language_codes_unique rule
-			rule.gsub! pattern, "lang:#{code[0]}"
-		 else
-			rule.gsub! 'twitter_lang:', 'lang:'
-		 end
-	  end
-
-	  #AppLogger.log_info "Rule (after): #{rule}"
-	  #AppLogger.log_info '----------------------'
-
-	  rule
-
-   end
-
-   def handle_common_duplicate_patterns rule, language
-
-	  #lang:xx OR lang:und OR lang:xx
-	  rule.gsub! "lang:#{language} OR lang:und OR lang:#{language}", "lang:#{language} OR lang:und"
-
-	  rule.gsub! "lang:#{language} OR lang:#{language}", "lang:#{language}"
-
-	  rule.gsub! "lang:#{language} lang:#{language}", "lang:#{language}"
-
-	  rule
-
-   end
-
-   def handle_common_lang_patterns rule
-
-	  #lang:xx OR twitter_lang:xx
-	  pattern = /lang:[a-zA-Z][a-zA-Z] OR twitter_lang:[a-zA-Z][a-zA-Z]/
-	  rule = handle_lang_pair rule, pattern
-
-	  #twitter_lang:xx OR lang:xx
-	  pattern = /twitter_lang:[a-zA-Z][a-zA-Z] OR lang:[a-zA-Z][a-zA-Z]/
-	  rule = handle_lang_pair rule, pattern
-
-	  #lang:xx twitter_lang:xx
-	  pattern = /lang:[a-zA-Z][a-zA-Z] twitter_lang:[a-zA-Z][a-zA-Z]/
-	  rule = handle_lang_pair rule, pattern
-
-	  #twitter_lang:xx lang:xx
-	  pattern = /twitter_lang:[a-zA-Z][a-zA-Z] lang:[a-zA-Z][a-zA-Z]/
-	  rule = handle_lang_pair rule, pattern
-
-	  rule
-
-   end
-
-   def eliminate_duplicate_languages rule
-
-	  languages = collect_languages rule
-
-	  languages.each do |language|
-
-		 if rule.scan("lang:#{language}").count > 1
-
-			AppLogger.log_debug "Have double #{language}"
-
-			rule = handle_common_duplicate_patterns rule, language
-		 end
-	  end
-
-	  rule
-   end
-
-   def handle_has_lang(rule)
-	  rule.gsub!('-has:lang', 'lang:und')
-	  rule.gsub!('has:lang', '-lang:und')
-
-	  rule
-   end
-
-   def handle_lang_operators(rule)
-
-	  #Any twitter_lang Operators?	  
-	  twitter_lang_clauses = rule.scan('twitter_lang:').count
-
-	  #Any Gnip lang: Operators?
-	  gnip_lang_clauses = (rule.scan(/[ ()]lang:/).count)
-	  gnip_lang_clauses += 1 if rule.start_with?('lang:')
-
-	  #No language clauses?
-	  if twitter_lang_clauses == 0 and gnip_lang_clauses == 0
-		 return rule
-	  end
-
-	  #twitter_lang only?
-	  if twitter_lang_clauses > 0 and gnip_lang_clauses == 0
-		 return rule.gsub!('twitter_lang:', 'lang:')
-	  end
-
-	  #lang: only? Do nothing.
-	  if twitter_lang_clauses == 0 and gnip_lang_clauses > 0
-		 return rule
-	  end
-
-	  #OK, we have a mix of lang Operators
-	  #Shortcut is to replace the twitter_lang: clauses with lang:.
-	  #The longer answer is to eliminate twitter_langs in ORs and ANDs and clean up.
-	  AppLogger.log_debug "Have mix of lang and twitter_lang Operators..."
-	  #AppLogger.log_debug "Language rule (before): #{rule}"
-
-	  rule = handle_common_lang_patterns rule
-
-	  #First, snap to lang:.
-	  rule.gsub!('twitter_lang:', 'lang:')
-
-	  if duplicate_languages?(rule)
-		 rule = eliminate_duplicate_languages rule
-	  end
-
-	  #AppLogger.log_debug "Language rule (after): #{rule}"
-
-	  rule
-
-   end
-
-   #Drops the '_contains' from these Operators: 
-   # 'place_contains:', 'bio_location_contains', 'bio_contains', 'bio_name_contains', 'profile_region_contains', 
-   # 'profile_locality_contains', 'profile_subregion_contains'
-   def handle_contains_operators(rule)
-
-	  rule.gsub!('place_contains:', 'place:')
-	  rule.gsub!('bio_location_contains:', 'bio_location:')
-	  rule.gsub!('bio_contains:', 'bio:')
-	  rule.gsub!('bio_name_contains:', 'bio_name:')
-	  rule.gsub!('profile_region_contains:', 'profile_region:')
-	  rule.gsub!('profile_locality_contains:', 'profile_locality:')
-	  rule.gsub!('profile_subregion_contains:', 'profile_subregion:')
-
-	  rule
-   end
-
-   #Order here matters: check profile_country_code first, then check country_code.
-   def handle_country_code_operators(rule)
-
-	  rule.gsub!('profile_country_code:', 'profile_country:')
-
-	  rule.gsub!('country_code:', 'place_country:')
-
-	  rule
-   end
-
-   #Handle any rule translations.
-   #Explicitly not handling Klout, bio_lang, and has:profile* Operators. These will be passed through and 
-   #handled by the Rules API (and in the case of 2.0, identified as a rule NOT added).
-   def check_rule(rule)
-
-
-	  if rule.include? 'twitter_lang'
-		 rule = handle_lang_operators rule
-	  end
-
-	  if rule.include? 'has:lang'
-		 rule = handle_has_lang rule
-	  end
-
-	  if rule.include? '_contains:'
-		 rule = handle_contains_operators rule
-	  end
-
-
-	  if rule.include? 'country_code:'
-		 rule = handle_country_code_operators rule
-	  end
-
-	  rule
-
-   end
-
+   #Rules were loaded either from a single Rules API GET request, or loaded from a file.
+   #The number of rules may be quite high (up to 250K), and the payload size big (150 MB and higher?).
    def create_post_requests(rules)
-
-	  requests = []
-
-	  request_data = {}
-	  request_data['rules'] = []
 
 	  if @target_version == 1
 		 max_payload_size_in_mb = MAX_POST_DATA_SIZE_IN_MB_v1
-	  else
+	  else #version 2.0
 		 max_payload_size_in_mb = MAX_POST_DATA_SIZE_IN_MB_v2
 	  end
 
+	  requests = [] #Make take an array of requests to add rules to Target system. 
+	  
+	  request_data = {} #Start building hash for Rules API POST requests.
+	  request_data['rules'] = [] 
+
 	  rules.each do |rule|
-
 		 request_data['rules'] << rule
+	  end
+	  
+	  #Create JSON for request.
+	  request = request_data.to_json
+	  
+	  #Check size
+	  if request.bytesize < (max_payload_size_in_mb * 1000000)
+		 requests << request
+		 AppLogger.log_debug "Request has size: #{request.bytesize/1000} KB"
+	  else
+		 requests = split_request(request)
+	  end
+	  
+	  requests
+	 
+=begin
+		 
+		 
+	 request_data['rules'] << rule
 
-		 request = request_data.to_json
 
-		 if request.bytesize > (max_payload_size_in_mb * 1000000)
+		#request = request_data.to_json
+	 
+	    #puts "Size of 'request': #{request.bytesize}"
+	    puts "Size of 'request_data': #{ObjectSpace.memsize_of(request_data['rules'])}"
+	 
+		if request.bytesize > (max_payload_size_in_mb * 1000000)
 
 			#Save request, start over
 			requests << request
 			AppLogger.log_debug "Request has size: #{request.bytesize/1000} KB"
 			request_data['rules'] = [] #Initialize and re-add current rule.
 			request_data['rules'] << rule
-		 end
+		end
+		 
+		 
 	  end
 
 	  if request_data['rules'].count > 0
@@ -393,7 +182,10 @@ class RulesMigrator
 		 requests << request
 	  end
 
+
+
 	  requests
+=end
 
    end
 
@@ -426,10 +218,12 @@ class RulesMigrator
 		 
 		 rule_before = Marshal.load(Marshal.dump(rule))
 
-		 rule_translated['value'] = check_rule(rule['value'])
+		 #rule_translated['value'] = RuleTranslator.check_rule(rule['value'])
+         rule_translated['value'] = @rules_translator.check_rule(rule['value'])
 
+		 
 		 if rule_before['value'] != rule_translated['value']
-			@rules_translated << "'#{rule_before['value']}' translated to '#{rule_translated['value']}'"
+			@rules_translated << "'#{rule_before['value']}' ----> '#{rule_translated['value']}'"
 		 end
 
 		 translated_rules << rule_translated
@@ -461,7 +255,24 @@ class RulesMigrator
 
 
    end
+   
+   
+   def drop_bad_rules_from_request(request, rules_invalid)
+	  
+	  request_hash = JSON.parse(request)
+	  rules = request_hash['rules']
+	  
+	  rules.each do |rule|
+		 if rules_invalid.include?(rule['value'])
+			rules.delete(rule)
+		 end
+	  end
 
+	  #Reassemble request
+	  request = {} 
+	  request['rules'] = rules
+	  request.to_json
+   end
 
    def post_rules(target)
 
@@ -474,7 +285,7 @@ class RulesMigrator
 
 	  requests.each do |request|
 
-		 if @options[:write_rules_to] == 'files'
+		 if @options[:write_rules_to] == 'files' and not @options['write_to_file'].nil?
 
 			make_rules_file request
 
@@ -482,7 +293,7 @@ class RulesMigrator
 
 			begin
 			   response = @http.POST(target[:url], request)
-			   response_json = response.body.to_json
+			   #response_json = response.body.to_json
 			   response_hash = JSON.parse(response.body)
 
 			   AppLogger.log_debug "response code: #{response.code} | message: #{response.message} "
@@ -498,7 +309,7 @@ class RulesMigrator
 
 					 response_hash['detail'].each do |detail|
 						if detail['created'] == false
-						   AppLogger.log_info "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
+						   AppLogger.log_debug "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
 						end
 					 end
 				  end
@@ -506,25 +317,43 @@ class RulesMigrator
 				  #"{"summary":{"created":8,"not_created":5},"detail":[{"rule":{"value":"(lang:en OR lang:en OR lang:und) Gnip","tag":null,"id":710911249710653441},"created":true},{"rule":{"value":"(place:minneapolis OR bio:minnesota) (snow OR rain)","tag":null,"id":710911249735811073},"created":true},{"rule":{"value":"-lang:und (snow OR rain)","tag":null,"id":710911249735753728},"created":true},{"rule":{"value":"(lang:en) place_country_code:us bio:Twitter","tag":null,"id":710911249706409985},"created":true},{"rule":{"value":"(lang:en OR lang:und OR lang:en) Gnip","tag":null,"id":710911249735749632},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null,"id":710911249702191104},"created":true},{"rule":{"value":"lang:en Gnip","tag":null,"id":710911249735757825},"created":true},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null,"id":710911249706422273},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"lang:en Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"}]}"
 
 			   else #TODO: handle errors. 
+				  
+				  if response_hash['summary'].nil? #This is something the non-Rules API/syntax error. 
+					 AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
+				  else #Request was processed, but probably at least one rule was invalid w.r.t. to PT 2.0.
+					 
+					 #Idea here is to drop the bad rules, and retry, logging the bad rules....
+					 
+					 AppLogger.log_info "No rules were created. Here are the offending rules:"
+					 
+					 response_hash['detail'].each do |detail|
+						if detail['created'] == false and not detail['message'].nil?
+						   AppLogger.log_info "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
+						   
+						   #if detail['message'] about new 2.0 syntax validator.
+						   invalid_msg = "#{detail['rule']['value']} | #{detail['message']}"
+						   @rules_invalid << detail['rule']['value']
+						   
+						elsif detail['created'] == false and detail['message'].nil?
+						   AppLogger.log_debug "Rule '#{detail['rule']['value']}' was not created because it already exists."
 
+						   @rules_already_existing << detail['rule']['value']
 
-				  puts response_json
+						end
+					 end
 
-				  #"{"error":{"detail":[{"rule":{"value":"has:lang (snow OR rain)"},
-				  #      "message":"The has:lang operator is not supported. Use lang:und to identify Tweets where a language classification was not assigned. (at position 1)\n"},
-				  #
-				  # {"rule":{"value":"(lang:en) place_country:us bio:Twitter"},
-				  # "message":"Reference to invalid field 'place_country' (at position 11)\nReference to invalid field 'place_country',
-				  # 		must be from the list: [] (at position 11)\n"},
-				  #
-				  # {"rule":{"value":"(place_country:us profile_country:us) (rain OR snow)"},
-				  # "message":"Reference to invalid field 'profile_country' (at position 19)\nReference to invalid field 'place_country' (at position 2)\n
-				  #       Reference to invalid field 'profile_country', must be from the list: [from, to, source, retweets_of, place, url_contains, klout_score, contains, lang, bounding_box, point_radius, user_profile_location, sample, place_contains, bio_location_contains, time_zone, followers_count, bio_location, friends_count, statuses_count, listed_count, profile_point_radius, profile_bounding_box, profile_country_code, profile_region, profile_locality, klout_topic, klout_topic_id, klout_topic_contains, twitter_lang, retweets_of_status_id, in_reply_to_status_id, profile_subregion, user_place_id, url, url_title, url_description, place_country_code, bio, bio_name, has:mentions, has:hashtags, has:geo, has:links, has:media, has:profile_geo, has:lang, has:symbols, has:images, has:videos, is:retweet, is:verified, is:quote] (at position 19)\nReference to invalid field 'place_country', must be from the list: [from, to, source, retweets_of, place, url_contains, klout_score, contains, lang, bounding_box, point_radius, user_profile_location, sample, place_contains, bio_location_contains, time_zone, followers_count, bio_location, friends_count, statuses_count, listed_count, profile_point_radius, profile_bounding_box, profile_country_code, profile_region, profile_locality, klout_topic, klout_topic_id, klout_topic_contains, twitter_lang, retweets_of_status_id, in_reply_to_status_id, profile_subregion, user_place_id, url, url_title, url_description, place_country_code, bio, bio_name, has:mentions, has:hashtags, has:geo, has:links, has:media, has:profile_geo, has:lang, has:symbols, has:images, has:videos, is:retweet, is:verified, is:quote] (at position 2)\n"}],
-				  # "message":"The has:lang operator is not supported. Use lang:und to identify Tweets where a language classification was not assigned. (at position 1)\n",
-				  # "sent":"2016-03-18T17:36:22.750Z"}}"
+					 if @rules_invalid.count > 0
+						request = drop_bad_rules_from_request(request, @rules_invalid)
+
+						response = @http.POST(target[:url], request)
+						if response.code == '200' or response.code == '201'
+						   AppLogger.log_info "Retry after removing bad 2.0 syntax rules succeeded."
+						else
+						   AppLogger.log_error "Retry failed... "
+						end
+					 end
+				  end
 			   end
-
-
 			rescue
 			   sleep 5
 			   response = @http.POST(target[:url], request) #try again
@@ -554,26 +383,75 @@ class RulesMigrator
 
    end
 
+   def load_rules_from_file rules_file #By definition, this loading is only for a Source system.
+	  rules = File.read(rules_file)
+	  rules_hash = JSON.parse(rules)
+	  rules = rules_hash['rules']
+
+	  if rules.nil?
+		 AppLogger.log_error "Problem loading Source rules from file."
+	  else
+		@source[:num_rules_before] = rules.count
+	  end
+
+	  rules
+   end
+   
 
    def write_summary
 	  #Number of rules for source and target (before and after).
+	  puts '---------------------'
 	  puts "Rule Migrator summary"
-	  puts "     Source[:url] = #{@source[:url]}"
-	  puts "     Target[:url] = #{@target[:url]}"
+	  
+	  
 	  puts ''
 	  puts '---------------------'
+	  puts 'Source system:'
+	  puts "	Source[:url] = #{@source[:url]}"
+	  puts "	Source system has #{@source[:num_rules_before]} rules."
+	  puts "    Number of rules with version 1.0 syntax not supported in version 2.0: #{@rules_invalid.count}"
 	  puts ''
-	  puts "Source system had #{@source[:num_rules_before]} rules."
-	  puts "Target system had #{@target[:num_rules_before]} rules before, and #{@target[:num_rules_after]} rules after."
-
+	  puts 'Target system:'
+	  puts "   	Target[:url] = #{@target[:url]}"
+	  puts "   	Target system had #{@target[:num_rules_before]} rules before, and #{@target[:num_rules_after]} rules after."
+	  puts "    Number of rules translated: #{@rules_translated.count}"
+	  
+	  puts ''
 	  #Note any rules that needed to be 'translated'.
+	  puts '---------------------'
 	  if @rules_translated.count > 0
 		 
-		 puts "#{rules_translated.count} rules were translated:"
+		 puts "#{rules_translated.count} Source rules were translated:"
 		 @rules_translated.each do |rule|
 			puts "   #{rule}"
 		 end
 	  end
+	  
+	  puts ''
+	  #Rules that could not be added to version 2.0
+	  puts '---------------------'
+	  if @rules_invalid.count > 0
+
+		 puts "#{rules_invalid.count} Source rules that have version 1.0 syntax not supported in version 2.0:"
+		 @rules_invalid.each do |rule|
+			puts "   #{rule}"
+		 end
+	  end
+	  puts ''
+
+	  puts ''
+	  #Rules that already existed.
+	  puts '---------------------'
+	  if @rules_already_existing.count > 0
+
+		 puts "#{@rules_already_existing.count} Source rules already exist in Target system."
+		 @rules_already_existing.each do |rule|
+			puts "   #{rule}"
+		 end
+	  end
+	  puts ''
+	  
+	  
    end
 
 end
