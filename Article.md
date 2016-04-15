@@ -6,13 +6,19 @@ A new version of Gnip's real-time PowerTrack, version 2.0, is in the works. Ever
 
 This process is pretty straightforward, although there are many details to consider. PowerTrack 2.0 is the new platform for new features and enhancements. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
-Beyond [new Operators](#new_operators), there are other rule changes introduced with PowerTrack 2.0:
+Beyond [new Operators](#new_operators), there are other rule-related changes introduced with PowerTrack 2.0:
 
 + Only 'long' rules, with 2,048 characters, are supported.
 + Gnip ```matching_rules``` array are provided in both 'original' and Activity Stream formats. 
 + All [language classifications](#language_operators) are supplied by a Twitter system, and the Gnip language enrichment is being deprecated.
 + With hopes of providing a more logical grammar, some [Operators have changed in name only](#grammar_updates).
 + Some Operators have been [deprecated](#deprecated_operators).
+
+There are also some significant updates coming with the Rules API 2.0:
+
++ Numeric UUIDs are auto-generated when a rule is created.
++ Request payloads can be up to 5 MB in size.
++ New rule validations, such as no exclipit AND logical phrases are allowed.
 
 This article discusses several topics related to moving to PowerTrack version 2.0:
 
@@ -145,6 +151,18 @@ Here is an example of the new matching rules metadata that is included with all 
   }
 }
 ```
+
+#### New Rule Validations
+
+As with previous versions, every rule that is sent to the Rules API has its syntax verified. If you reference a PowerTrack Operator that does not exist, you will receive an error and the request is rejected. Note that if you are uploading an array of 100 rules, a single bad rule will prevent any rules in the request from being added.
+
+With version 2, there are three additional vaidations applied to your rule syntax:
+
++ No explicit AND logical phrases. This is probably the most common syntax mistake with PowerTrack rules. An unquoted 'AND' (and case varient such as 'and') is treated as a simple keyword and not a logical AND. If any rule has an unquoted AND, it will be rejected. 
+
++ No 'or' logical phrases.
+
++ No 'NOT' logical phrases.
 
 #### Rule Validation Endpoint
 
