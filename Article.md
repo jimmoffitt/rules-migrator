@@ -156,13 +156,19 @@ Here is an example of the new matching rules metadata that is included with all 
 
 As with previous versions, every rule that is sent to the Rules API has its syntax verified. If you reference a PowerTrack Operator that does not exist, you will receive an error and the request is rejected. Note that if you are uploading an array of 100 rules, a single bad rule will prevent any rules in the request from being added.
 
-With version 2, there are three additional vaidations applied to your rule syntax:
+With version 2, the following three additional vaidations applied to your rule syntax. These new validations will prevent some of the most common mistakes when writing PowerTrack rules, where a rule is syntactic valid but does not implement the intended logic. The rule examples below illustrate the potential affects of these logical mistakes using recent 30-day Search counts.
 
-+ No explicit AND logical phrases. This is probably the most common syntax mistake with PowerTrack rules. An unquoted 'AND' (and case varient such as 'and') is treated as a simple keyword and not a logical AND. If any rule has an unquoted AND, it will be rejected. 
++ No explicit ```AND``` logical phrases. This is probably the most common syntax mistake with PowerTrack rules. An unquoted ```AND``` (using any case) is treated as a simple keyword and not a logical AND. If any rule has an unquoted AND, it will be rejected. 
+ + (climate AND change) winter → 351 Tweets
+ + (climent change) winter → 1,600 Tweets
 
-+ No 'or' logical phrases.
++ No lowercase ```or``` logical phrases. Logical ORs must be uppercase and unquoted. Unquoted, lowercase ```or``` clauses are treated as a simple keyword and not a logical OR. If any rule has an unquoted, lowercase ```or```, it will be rejected. 
+ + (snow or cold) weather → 281 Tweets
+ + (snow OR cold) weather → 250,000 Tweets
 
-+ No 'NOT' logical phrases.
++ No ```NOT``` logical phrases. Logical NOTs must implemented with a ```-``` (dash) character. Unquoted ```NOT``` claueses (using any case) are treated as a simple keyword and not a logical NOT. If any rule has an unquoted ```NOT```, it will be rejected. 
+ + (sol playa) NOT lang:es → 13 Tweets
+ + (sol playa) -lang:es → 3,300 Tweets
 
 #### Rule Validation Endpoint
 
