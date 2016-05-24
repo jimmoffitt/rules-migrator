@@ -180,11 +180,22 @@ PowerTrack 2.0 provides a rule validation endpoint:
  ``` https://gnip-api.twitter.com/rules/powertrack/accounts/<accountName>/<streamLabel>/validation.json ```
  
 This endpoint enables you to submit candidate rules and check whether the rule has valid syntax or not. 
- 
- 
+
 ### Review of Special Character Usage <a id="special_character_usage" class="tall">&nbsp;</a>
 
-(new material on reviewing special characters and verifying full-fidelity) 
+When migrating to version 2.0, it is highly recommended that you review the use of 'special' characters in your rule-sets. By special we mean any character that has many common unicode representations. For example, hyphens or dashes have at least ten different unicode versions. 
+
++ ```doesn't``` uses the 'U+0027 APOSTROPHE' character.
++ ```doesnʼt``` uses the 'U+02BC MODIFIER LETTER APOSTROPHE' character.
++ ```doesn’t``` uses the 'U+2019 RIGHT SINGLE QUOTATION' character.
+
+Quotes are another prime example. There are 'vanilla' aprostrophes, single, and double quotation marks, along with 'stylized' versions.  
+
+
+To help illustrate the issue, we took a survey of the usage levels of hyphens and quotes 'in the wild', looking at Tweets that include these variety of characters. To do this, we used the 30-Day Search API and requested 30-day counts of Tweets with these characters.
+
+
+
  
 ### Example 'Rule Migrator' Application <a id="rule_migrator" class="tall">&nbsp;</a>
 
