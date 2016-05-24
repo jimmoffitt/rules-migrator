@@ -2,7 +2,7 @@
 
 ### Introduction
 
-A new version of Gnip's real-time PowerTrack, version 2.0, is in the works. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 in the near future. 
+A new version of Gnip's real-time PowerTrack, version 2.0, is currently in Beta and will be generally available later in 2016. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 in the near future. 
 
 This process is pretty straightforward, although there are many details to consider. PowerTrack 2.0 is the new platform for new features and enhancements. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
@@ -20,10 +20,13 @@ There are also some significant updates coming with the Rules API 2.0:
 + Request payloads can be up to 5 MB in size.
 + New rule validations, such as no exclipit AND logical phrases are allowed.
 
+In addition to all of these details, it is highly recommended that you review 'special' character usage in your current rules. Are you attempting to match on Tweets with hyphens and quotes? Given that there are multiple unicode/UTF-8 representations of such characters, are your rules handling all of these? Migrating to version 2.0 offers a great opportunity to ensure that your rules are matching on all the Tweets you want to collect. 
+
 This article discusses several topics related to moving to PowerTrack version 2.0:
 
 + [Changes in PowerTrack Operators](#operator_changes).
 + [Updates to the Rules API](#rules_api_changes).
++ [Rules with Special Characters](#special_character_usage)
 + [Example "Rules Migrator" application](#rule_migrator).   
  
 ### Changes in PowerTrack Operators <a id="operator_changes" class="tall">&nbsp;</a>
@@ -178,6 +181,10 @@ PowerTrack 2.0 provides a rule validation endpoint:
  
 This endpoint enables you to submit candidate rules and check whether the rule has valid syntax or not. 
  
+ 
+### Review of Special Character Usage <a id="special_character_usage" class="tall">&nbsp;</a>
+
+(new material on reviewing special characters and verifying full-fidelity) 
  
 ### Example 'Rule Migrator' Application <a id="rule_migrator" class="tall">&nbsp;</a>
 
