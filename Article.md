@@ -94,7 +94,7 @@ If your rule set includes any of the following Operators, those clauses will nee
 + ```has:profile_geo_subregion```*
 + ```has:profile_geo_locality```*
        
-`* Note that ```has:profile_geo``` is still supported in version 2.0. 
+* Note that ```has:profile_geo``` is still supported in version 2.0. 
 
 There are another set of deprecated version 1.0 Operators where the filtering/matching behavior can be approximated by similar, alternate Operators. This group is made up of *substring* matching Operators that are being replaced by *token-based* Operators:
 
@@ -183,18 +183,49 @@ This endpoint enables you to submit candidate rules and check whether the rule h
 
 ### Review of Special Character Usage <a id="special_character_usage" class="tall">&nbsp;</a>
 
-When migrating to version 2.0, it is highly recommended that you review the use of 'special' characters in your rule-sets. By special we mean any character that has many common unicode representations. For example, hyphens or dashes have at least ten different unicode versions. 
+Migrating your rule sets to version 2.0 provides a great opportunity to review your current use of 'special' characters. By 'special' we mean any character that has many common unicode representations. For example, hyphens or dashes have at least ten different unicode versions. Here is an example phrase containing three different unicode representations of a hyphen:
 
-+ ```doesn't``` uses the 'U+0027 APOSTROPHE' character.
-+ ```doesnʼt``` uses the 'U+02BC MODIFIER LETTER APOSTROPHE' character.
-+ ```doesn’t``` uses the 'U+2019 RIGHT SINGLE QUOTATION' character.
++ ```doesn't match``` contains the 'U+0027 APOSTROPHE' character.
++ ```doesnʼt match``` contains the 'U+02BC MODIFIER LETTER APOSTROPHE' character.
++ ```doesn’t match``` contains the 'U+2019 RIGHT SINGLE QUOTATION' character.
 
-Quotes are another prime example. There are 'vanilla' aprostrophes, single, and double quotation marks, along with 'stylized' versions.  
+Quotes are another prime example. There are 'plain' aprostrophes, single, and double quotation marks, along with 'stylized' versions. Here are four examples of a quoted phrases using four different set of quotation marks:   
+
++ ```she said "I wish it would snow"``` contains two 'U+0022 QUOTATION MARK' characters.
++ ```she said 'I wish it would snow'``` contains two 'U+0027 APOSTROPHE' characters.
++ ```she said “I wish it would snow”``` contains one 'U+201C LEFT DOUBLE QUOTATION MARK' and one 'U+201D RIGHT DOUBLE QUOTATION MARK' characters.
++ ```she said ‘I wish it would snow’``` contains one 'U+2018 LEFT SINGLE QUOTATION MARK' and one 'U+2019 RIGHT SINGLE QUOTATION MARK' characters.
+
+The challenge is that many of these different unicode representations are commonly used in Tweets. To help illustrate the issue, we took a survey of the usage levels of hyphens and quotes 'in the wild', looking at Tweets that include these variety of characters. To do this, we used the 30-Day Search API and requested 30-day counts of Tweets with these characters.
+
+| Character 	| Unicode description   	| 30-Day Search Totals 	|
+|-----------	|-----------------------	|----------------------	|
+|     -     	| U+002D HYPHEN-MINUS   	|        1,170,000,000 	|
+|     —     	| U+2014 EM DASH        	|           36,000,000 	|
+|     –     	| U+2013 EN DASH        	|           23,000,000 	|
+|     ―     	| U+2015 HORIZONTAL BAR 	|            4,800,000 	|
+|     ‐     	| U+2212 MINUS SIGN     	|              900,000 	|
+|     ‐     	| U+2010 HYPHEN         	|              700,000 	|
 
 
-To help illustrate the issue, we took a survey of the usage levels of hyphens and quotes 'in the wild', looking at Tweets that include these variety of characters. To do this, we used the 30-Day Search API and requested 30-day counts of Tweets with these characters.
+| Character 	| Unicode description                	| 30-Day Search Totals 	|
+|-----------	|------------------------------------	|----------------------	|
+|     '     	| U+0027 APOSTROPHE                  	|        1,260,000,000 	|
+|     "     	| U+0022 QUOTATION MARK              	|          420,000,000 	|
+|     ’     	| U+2019 RIGHT SINGLE QUOTATION MARK 	|           78,000,000 	|
+|     ”     	| U+201D RIGHT DOUBLE QUOTATION MARK 	|           44,000,000 	|
+|     “     	| U+201C LEFT DOUBLE QUOTATION MARK  	|           43,000,000 	|
+|     ‘     	| U+2018 LEFT SINGLE QUOTATION MARK  	|           15,000,000 	|
 
+These results illustrate that to ensure complete matching on phrases containing hyphens and quotes, it is a best practice to build PowerTrack rules based on multiple unicode representations. If you are currently building rules that match using a single unicode version, it is highly recommended to expand your rules to reference other common versions.
 
+For example, instead of this single rule:
+
+```"doesn't match"```
+
+You should instead consider:
+
+```"doesn't match" OR "doesnʼt match" OR "doesnʼt match"``` 
 
  
 ### Example 'Rule Migrator' Application <a id="rule_migrator" class="tall">&nbsp;</a>
