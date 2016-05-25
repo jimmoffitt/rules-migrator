@@ -2,7 +2,7 @@
 
 ### Introduction
 
-A new version of Gnip's real-time PowerTrack, version 2.0, is currently in Beta and will be generally available later in 2016. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 in the near future. 
+A new version of Gnip's real-time PowerTrack, version 2.0, is now available. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 in the near future. 
 
 This process is pretty straightforward, although there are many details to consider. PowerTrack 2.0 is the new platform for new features and enhancements. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
@@ -37,7 +37,7 @@ Other changes include updates in simple grammar and language classification deta
 
 #### New Operators <a id="new_operators" class="tall">&nbsp;</a>
 
-PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE]((http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators)) for the list of new Operators.
+PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for the list of new Operators.
 
 The focus of this article, and the [migration tool](#rule_migrator), is how to migrate existing version 1.0 rules to 2.0. While these new Operators are not part of the rule translation discussion, incorporating the new Operators should be considered as you migrate to version 2. Based on the types of matching you are performing with version 1.0, here are some examples of filtering mechanisms that will likely benefit from these new Operators:
 
