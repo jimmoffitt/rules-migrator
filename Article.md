@@ -227,6 +227,7 @@ You should instead consider:
 
 ```"doesn't match" OR "doesnʼt match" OR "doesnʼt match"``` 
 
+Hyphens and quotation marks are two of the most common examples of multiple unicode characters for the same punctuation type. As you migrate to version 2, take this opportunity to review your use of punctuation and help ensure that you are matching on the complete set of Tweets available.
  
 ### Example 'Rule Migrator' Application <a id="rule_migrator" class="tall">&nbsp;</a>
 
@@ -234,8 +235,7 @@ As a group focused on supporting Gnip customers, we are avid 'in-house' users of
 
 So we started to develop a tool that could help us translate and migrate PowerTrack 1.0 rules to version 2.0. The result of that effort is available [HERE](https://github.com/jimmoffitt/rules-migrator) on GitHub. The project's README describes how the tool works and the type of 1.0 → 2.0 rule translations it handles. Note that this tool can also be used to, for example, migrate rules between same-version streams, and from real-time to Replay streams.  
 
-This tool is very much a prototype. If you improve or extend or refactor, or whatever, this code base, please share your efforts.
-
+This tool is very much a prototype and continues to evolve as we approach the official launch of PowerTrack 2.0. 
 
 
 
