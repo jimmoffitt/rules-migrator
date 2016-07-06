@@ -2,9 +2,11 @@
 
 ### Introduction
 
-A new version of Gnip's real-time PowerTrack, version 2.0, is now available. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 in the near future. 
+A new version of Gnip's real-time PowerTrack, version 2.0, is now available. PowerTrack 2.0 is the new platform for new features and enhancements. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 by the end of 2016. 
 
-This process is pretty straightforward, although there are many details to consider. PowerTrack 2.0 is the new platform for new features and enhancements. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
+This process is pretty straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the plumbing and the filtering. Plumbing refers to the components that stream realtime data, parse incoming Tweet JSON, and store the data. These changes include details such as endpoint URLs, request signatures, and updated JSON structures, and will be discuss in a separate article.
+
+The focus of this article is on migrating version 1.0 rules to version 2.0. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
 Beyond [new Operators](#new_operators), there are other rule-related changes introduced with PowerTrack 2.0:
 
@@ -12,7 +14,7 @@ Beyond [new Operators](#new_operators), there are other rule-related changes int
 + Gnip ```matching_rules``` array are provided in both 'original' and Activity Stream formats. 
 + All [language classifications](#language_operators) are supplied by a Twitter system, and the Gnip language enrichment is being deprecated.
 + With hopes of providing a more logical grammar, some [Operators have changed in name only](#grammar_updates).
-+ Some Operators have been [deprecated](#deprecated_operators).
++ Due to low adoption, some Operators have been [deprecated](#deprecated_operators).
 
 There are also some significant updates coming with the Rules API 2.0:
 
@@ -27,8 +29,8 @@ This article discusses several topics related to moving to PowerTrack version 2.
 + [Changes in PowerTrack Operators](#operator_changes).
 + [Updates to the Rules API](#rules_api_changes).
 + [Rules with Special Characters](#special_character_usage)
-+ [Example "Rules Migrator" application](#rule_migrator).   
- 
++ [Migration Steps](#migration_steps)
+
 ### Changes in PowerTrack Operators <a id="operator_changes" class="tall">&nbsp;</a>
 
 PowerTrack 2.0 introduces a variety of changes to the Operators available for filtering Tweets of interest from the firehose. First, PowerTrack 2.0 introduces a set of new Operators, including the ability to match on emojis, new expanded URL enrichments, and the ability to fine-tune media matching with Operators such as has:videos and has:images. See [HERE](http://support.gnip.com/apis/powertrack2.0/overview.html#NewFeatures) for a complete list of what's new.
@@ -228,6 +230,29 @@ You should instead consider:
 ```"doesn't match" OR "doesnʼt match" OR "doesnʼt match"``` 
 
 Hyphens and quotation marks are two of the most common examples of multiple unicode characters for the same punctuation type. As you migrate to version 2, take this opportunity to review your use of punctuation and help ensure that you are matching on the complete set of Tweets available.
+
+### Migration Steps <a id="migration_steps" class="tall">&nbsp;</a>
+
+When you are ready to start the 2.0 migration, reach out to your account manager and arrange for the new 2.0 products to be deployed on your account while you work through the migration. Here is an general outline of steps to take:
+
++ Review new PowerTrack 2.0 Operators and assess how they will help you with your use-case.
++ Review use of PowerTrack Operators that have had a change in grammar. 
++ Review use of deprecated PowerTrack Operators, and assess alternate Operators.  
++ Build a version 2.0 JSON rule set. 
++  One technique is to POST your version 1.0 rules to version 2.0, noting:
+ + Which rules will be updated with new Operators.
+ + Which rules are not valid with version 2.0:
+  + Replace deprecated Operators that have an equivalent alternative.
+  + Drop deprecated Operators that have no replacement.
+  + Any special characters that are not expected.
+
+To help with this effort, [this tool](https://github.com/jimmoffitt/rules-migrator) is available to help.
+
+Once you have finished the migration to version 2.0, we work with you to turn off the version 1.0 products.
+
+
+
+
 
 
 
