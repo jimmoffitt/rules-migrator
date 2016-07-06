@@ -248,7 +248,7 @@ When you are ready to start the 2.0 migration, reach out to your account manager
 
 To help with this effort, [this tool](https://github.com/jimmoffitt/rules-migrator) is available to help.
 
-Once you have finished the migration to version 2.0, we work with you to turn off the version 1.0 products.
+Once you have finished the migration to version 2.0, we'll work with you to turn off the version 1.0 products.
 
 
 
