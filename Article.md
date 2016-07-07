@@ -95,7 +95,7 @@ If your rule set includes any of the following Operators, those clauses will nee
 + ```has:profile_geo_region```*
 + ```has:profile_geo_subregion```*
 + ```has:profile_geo_locality```*
-       
+    
 * Note that ```has:profile_geo``` is still supported in version 2.0. 
 
 There are another set of deprecated version 1.0 Operators where the filtering/matching behavior can be approximated by similar, alternate Operators. This group is made up of *substring* matching Operators that are being replaced by *token-based* Operators:
