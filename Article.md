@@ -4,7 +4,7 @@
 
 A new version of Gnip's real-time PowerTrack, version 2.0, is now available. PowerTrack 2.0 is the new platform for new features and enhancements. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 by the end of 2016. 
 
-This process is pretty straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the plumbing and the filtering. Plumbing refers to the components that stream realtime data, parse incoming Tweet JSON, and store the data. These changes include details such as endpoint URLs, request signatures, and updated JSON structures, and will be discuss in a separate article.
+This process is pretty straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the plumbing and the filtering. Plumbing refers to the components that stream realtime data, parse incoming Tweet JSON, and store the data. These changes include details such as endpoint URLs, request signatures, and updated JSON structures, and will be discussed in an upcoming 'Migrating to Gnip 2.0' article.
 
 The focus of this article is on migrating version 1.0 rules to version 2.0. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
