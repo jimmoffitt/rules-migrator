@@ -2,16 +2,16 @@
 
 ### Introduction
 
-As annouced [HERE](https://blog.twitter.com/2016/gnip-2-is-here), the new version of Gnip's real-time PowerTrack, version 2.0, is now available. PowerTrack 2.0 is the new platform for new features and enhancements. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 by December 1, 2016. 
+As announced [HERE](https://blog.twitter.com/2016/gnip-2-is-here), the new version of Gnip's real-time PowerTrack, version 2.0, is now available. PowerTrack 2.0 provides a bunch of new features and enhancements, and is the platform for future development. Everyone using real-time PowerTrack version 1.0 will need to migrate to version 2.0 by December 1, 2016. 
 
-This process is pretty straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the 'plumbing' and the filtering. Plumbing refers to the components that stream real-time data, parse incoming Tweet JSON, and store the data. These changes include details such as endpoint URLs, request signatures, and updated JSON structures, and will be discussed in an upcoming 'Migrating to Gnip 2.0' article.
+This migration process is straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the 'plumbing' and the filtering. Plumbing refers to the components that stream real-time data, parse incoming Tweet JSON, and store the data. These changes include new endpoint URLs, changes in request signatures for Backfill and deleting rules, and some updated JSON structures to parse.
 
 The focus of this article is on migrating version 1.0 rules to version 2.0. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
 Beyond [new Operators](#new_operators), there are other rule-related changes introduced with PowerTrack 2.0:
 
 + Only 'long' rules, with 2,048 characters, are supported.
-+ Gnip ```matching_rules``` array are provided in both 'original' and Activity Stream formats. 
++ Gnip ```matching_rules``` array is provided in both 'original' and Activity Stream formats. In fact, all [Gnip Enrichments](http://support.gnip.com/enrichments/) are provided in both.
 + All [language classifications](#language_operators) are supplied by a Twitter system, and the Gnip language enrichment is being deprecated.
 + With hopes of providing a more logical grammar, some [Operators have changed in name only](#grammar_updates).
 + Due to low adoption, some Operators have been [deprecated](#deprecated_operators).
@@ -41,7 +41,7 @@ Other changes include updates in simple grammar and language classification deta
 
 PowerTrack 2.0 introduces several new Operators and is the platform for future additions. See [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for the list of new Operators.
 
-The focus of this article, and the [migration tool](#rule_migrator), is how to migrate existing version 1.0 rules to 2.0. While these new Operators are not part of the rule translation discussion, incorporating the new Operators should be considered as you migrate to version 2. Based on the types of matching you are performing with version 1.0, here are some examples of filtering mechanisms that will likely benefit from these new Operators:
+The focus of this article is how to migrate existing version 1.0 rules to 2.0. While these new Operators are not part of the rule translation discussion, incorporating the new Operators should be considered as you migrate to Gnip 2.0. Based on the types of matching you are performing with version 1.0, here are some examples of filtering mechanisms that will likely benefit from these new Operators:
 
 + If your rules use the ```url_contains:``` Operator you'll probably want to consider using the new ```url_title:``` and ```url_description:``` Operators. These new Operators enable you to dig a bit deeper into the included link to match on more than just tokens and patterns of the URL. The URL itself may not hint at the subject of the linked to web page, and now with these Operators you can match the web page title and description.   
 + The ```has:media``` Operator operates on both native photos and videos. With version 2.0, you can make a distinction between these two media types with the ```has:videos``` and ```has:images``` Operators. 
@@ -49,7 +49,7 @@ The focus of this article, and the [migration tool](#rule_migrator), is how to m
 
 #### Language Operator Changes <a id="language_operators" class="tall">&nbsp;</a>
  
-PowerTrack 1.0 supported two language classifications: the Gnip classification with the ```lang:``` Operator, and the Twitter classification with the ```twitter_lang:``` Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated, and there will be a single ```lang:``` Operator powered by the Twitter system. The Twitter classification supports 40 (!) more languages, assigns a ```und``` (undefined) when no classification can be made (e.g., Tweets with only emojis and URLs), and in some cases is more accurate. 
+PowerTrack 1.0 supported two language classifications: the Gnip classification with the ```lang:``` Operator, and the Twitter classification with the ```twitter_lang:``` Operator. With PowerTrack 2.0, the Gnip language enrichment is being deprecated, and there will be a single ```lang:``` Operator powered by the Twitter system. The Twitter classification supports 40 (!) more languages, assigns a ```und``` (undefined) when no classification can be made (e.g., Tweets with only emojis and URLs), and in many cases is more accurate. 
 
 If you have version 1.0 rules based on language classifications, here are some rule translation details to consider:
 
@@ -90,7 +90,8 @@ As documented [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#
 If your rule set includes any of the following Operators, those clauses will need to be removed since there is no equivalent Operator in version 2.0:
 
 + ```klout_topic:```
-+ ```klout_topic-contains:```
++ ```klout_topic_contains:```
++ ```klout_topic_id:```
 + ```bio_lang```
 + ```has:profile_geo_region```*
 + ```has:profile_geo_subregion```*
@@ -128,7 +129,7 @@ payloads. Rules API 1.0 has a data request payload size limit of 1 MB. With Rule
  
 #### Rule IDs 
 
-With version 1.0 a 'rule' has two attributes: ```value``` and ```tag```. The ```value``` attribute contains the syntax of the rule, while the ```tag``` is a user-specified string used to either provide a universally-unique ID (UUID) (considered a best practice, btw), or a tag/label to logically group rules (e.g., "rule related to weather projects").
+With version 1.0 a 'rule' had two attributes: ```value``` and ```tag```. The ```value``` attribute contains the syntax of the rule, while the ```tag``` is a user-specified string used to either provide a universally-unique ID (UUID) (considered a best practice, btw), or a tag/label to logically group rules (e.g., "rule related to weather projects").
   
 PowerTrack 2.0 introduces a new rule attribute, a primary key ```id```, which is auto-generated when a rule is created. Unique Rule IDs are important since with PowerTrack 2.0 only rule IDs and tags are included in the ```gnip.matching_rules``` metadata. (Note that is similar to version 1 'long' rules behavior with only rule tags included.) PowerTrack 2.0 supports only 'long' rules, so the rule syntax (or the rule ```value```) is not returned in the matching rule array. Since the rule syntax is not returned, it is important to have a unique ```id``` so the rule syntax can be looked up on the client-side. 
 
@@ -161,7 +162,7 @@ Here is an example of the new matching rules metadata that is included with all 
 
 As with previous versions, every rule that is sent to the Rules API has its syntax verified. If you reference a PowerTrack Operator that does not exist, you will receive an error and the request is rejected. Note that if you are uploading an array of 100 rules, a single bad rule will prevent any rules in the request from being added.
 
-With version 2, the following three additional vaidations applied to your rule syntax. These new validations will prevent some of the most common mistakes when writing PowerTrack rules, where a rule is syntactic valid but does not implement the intended logic. The rule examples below illustrate the potential affects of these logical mistakes using recent 30-day Search counts.
+With version 2, the following three additional vaidations are applied to your rule syntax. These new validations will prevent some of the most common mistakes when writing PowerTrack rules, where a rule is syntactic valid but does not implement the intended logic. The rule examples below illustrate the potential affects of these logical mistakes using recent 30-day Search counts.
 
 + No explicit ```AND``` logical phrases. This is probably the most common syntax mistake with PowerTrack rules. An unquoted ```AND``` (using any case) is treated as a simple keyword and not a logical AND. If any rule has an unquoted AND, it will be rejected. 
  + (climate AND change) winter → 351 Tweets
@@ -229,24 +230,31 @@ You should instead consider:
 
 ```"doesn't match" OR "doesnʼt match" OR "doesnʼt match"``` 
 
+If matching on that exact phrase is not important, this rule could also be written as ```("doesn't" OR "doesnʼt" OR "doesnʼt") match``` 
+
 Hyphens and quotation marks are two of the most common examples of multiple unicode characters for the same punctuation type. As you migrate to version 2, take this opportunity to review your use of punctuation and help ensure that you are matching on the complete set of Tweets available.
 
 ### Migration Steps <a id="migration_steps" class="tall">&nbsp;</a>
 
-When you are ready to start the 2.0 migration, reach out to [gnipmigration@twitter.com](gnipmigration@twitter.com) and kick-off the process.
+When you are ready to start the 2.0 migration, reach out to [gnipmigration@twitter.com](gnipmigration@twitter.com) to kick-off the process.
 
 For migrating your real-time PowerTrack rules, here is an general outline of steps to take:
 
 + Review new PowerTrack 2.0 Operators and assess how they will help you with your use-case.
++ Revisit the Gnip Enrichments and assess how they will help you with your use-case.
 + Review use of PowerTrack Operators that have had a change in grammar. 
 + Review use of deprecated PowerTrack Operators, and assess alternate Operators.  
-+ Build a version 2.0 JSON rule set. 
-+  One technique is to POST your version 1.0 rules to version 2.0, noting:
- + Which rules will be updated with new Operators.
- + Which rules are not valid with version 2.0:
++ Start building your version 2.0 JSON rule set. 
+ + GET current rules from the version 1.0 Rules API endpoint. 
   + Replace deprecated Operators that have an equivalent alternative.
   + Drop deprecated Operators that have no replacement.
-  + Any special characters that are not expected.
+ + POST these rules to your version 2.0 Rules API endpoint. 
+  + The Rules API response will indicate if there are any rules that need attention.  
+
+We're excited to officially launch Gnip 2.0, and trust you'll find its new features and enhancements beneficial. As always, let us know if you have any questions!
+
+
+ 
 
 
 
