@@ -2,9 +2,9 @@
 
 ### Introduction
 
-As announced [HERE](https://blog.twitter.com/2016/gnip-2-is-here), the new version of Gnip's real-time PowerTrack, version 2.0, is now available. PowerTrack 2.0 provides a bunch of new features and enhancements, and is the platform for future development. Everyone using real-time PowerTrack version 1.0 will need to migrate to version 2.0 by December 1, 2016. 
+As announced [HERE](https://blog.twitter.com/2016/gnip-2-is-here), Gnip 2.0 is here. This means a new version of Gnip's realtime PowerTrack, version 2.0, is now available. PowerTrack 2.0 provides a bunch of new features and enhancements, and is the platform for future development. Everyone using realtime PowerTrack version 1.0 will need to migrate to version 2.0 by December 1, 2016. 
 
-This migration process is straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the 'plumbing' and the filtering. Plumbing refers to the components that stream real-time data, parse incoming Tweet JSON, and store the data. These changes include new endpoint URLs, changes in request signatures for Backfill and deleting rules, and some updated JSON structures to parse.
+This migration process is straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the 'plumbing' and the filtering. Plumbing refers to the components that stream realtime data, parse incoming Tweet JSON, and store the data. These changes include new endpoint URLs, changes in request signatures for Backfill and deleting rules, and some updated JSON structures to parse.
 
 The focus of this article is on migrating version 1.0 rules to version 2.0. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
@@ -238,7 +238,7 @@ Hyphens and quotation marks are two of the most common examples of multiple unic
 
 When you are ready to start the 2.0 migration, reach out to [gnipmigration@twitter.com](gnipmigration@twitter.com) to kick-off the process.
 
-For migrating your real-time PowerTrack rules, here is an general outline of steps to take:
+For migrating your realtime PowerTrack rules, here is an general outline of steps to take:
 
 + Review new PowerTrack 2.0 Operators and assess how they will help you with your use-case.
 + Revisit the Gnip Enrichments and assess how they will help you with your use-case.
