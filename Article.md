@@ -2,9 +2,9 @@
 
 ### Introduction
 
-A new version of Gnip's real-time PowerTrack, version 2.0, is now available. PowerTrack 2.0 is the new platform for new features and enhancements. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 by the end of 2016. 
+As annouced [HERE](https://blog.twitter.com/2016/gnip-2-is-here), the new version of Gnip's real-time PowerTrack, version 2.0, is now available. PowerTrack 2.0 is the new platform for new features and enhancements. Everyone using real-time PowerTrack version 1.0 will need to migrate their filtering rules over to version 2.0 by December 1, 2016. 
 
-This process is pretty straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the plumbing and the filtering. Plumbing refers to the components that stream realtime data, parse incoming Tweet JSON, and store the data. These changes include details such as endpoint URLs, request signatures, and updated JSON structures, and will be discussed in an upcoming 'Migrating to Gnip 2.0' article.
+This process is pretty straightforward, although there are many details to consider. There are two main areas that will require attention during the migration process: the 'plumbing' and the filtering. Plumbing refers to the components that stream real-time data, parse incoming Tweet JSON, and store the data. These changes include details such as endpoint URLs, request signatures, and updated JSON structures, and will be discussed in an upcoming 'Migrating to Gnip 2.0' article.
 
 The focus of this article is on migrating version 1.0 rules to version 2.0. Moving to 2.0 provides [new PowerTrack Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#NewOperators) for matching on Tweets of interest. For example, more URL metadata is available such as the web site HTML Titles and Descriptions. There are also new ways to fine-tune what media is linked to in Tweets. Are you only interested only in videos or photos? Now you can be more specific. Not to mention that you can now filter and match on emojis. 
 
@@ -18,7 +18,7 @@ Beyond [new Operators](#new_operators), there are other rule-related changes int
 
 There are also some significant updates coming with the Rules API 2.0:
 
-+ Numeric UUIDs are auto-generated when a rule is created.
++ Numeric universally-unique IDs (UUID) are auto-generated when a rule is created.
 + Request payloads can be up to 5 MB in size.
 + New rule validations, such as no exclipit AND logical phrases are allowed.
 
@@ -233,7 +233,9 @@ Hyphens and quotation marks are two of the most common examples of multiple unic
 
 ### Migration Steps <a id="migration_steps" class="tall">&nbsp;</a>
 
-When you are ready to start the 2.0 migration, reach out to your account manager and arrange for the new 2.0 products to be deployed on your account while you work through the migration. Here is an general outline of steps to take:
+When you are ready to start the 2.0 migration, reach out to [gnipmigration@twitter.com](gnipmigration@twitter.com) and kick-off the process.
+
+For migrating your real-time PowerTrack rules, here is an general outline of steps to take:
 
 + Review new PowerTrack 2.0 Operators and assess how they will help you with your use-case.
 + Review use of PowerTrack Operators that have had a change in grammar. 
@@ -246,9 +248,7 @@ When you are ready to start the 2.0 migration, reach out to your account manager
   + Drop deprecated Operators that have no replacement.
   + Any special characters that are not expected.
 
-To help with this effort, [this tool](https://github.com/jimmoffitt/rules-migrator) is available to help.
 
-Once you have finished the migration to version 2.0, we'll work with you to turn off the version 1.0 products.
 
 
 
