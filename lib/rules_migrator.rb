@@ -1,3 +1,8 @@
+# TODOs:
+# [] Delete code has option to write to file... do we want/need that?  Or just do API and DELETE!
+# [] rule_deleter writes wrong output.
+
+
 require_relative './common/app_logger'
 require_relative './common/restful'
 require_relative './rules/rule_translator'
@@ -12,7 +17,7 @@ class RulesMigrator
    MAX_POST_DATA_SIZE_IN_MB_v1 = 1
    MAX_POST_DATA_SIZE_IN_MB_v2 = 5
 
-   REQUEST_SLEEP_IN_SECONDS = 10 #Sleep this long with hitting request rate limit.
+   REQUEST_SLEEP_IN_SECONDS = 10 #Sleep this long after hitting request rate limit.
 
    attr_accessor :source,
 				 :source_version,
@@ -20,12 +25,12 @@ class RulesMigrator
 				 :target_version,
 				 :do_rule_translation,
 				 :rules_translated,
-				 :rules_already_existing,
-				 :rules_invalid,           #Valid 1.0 rules not passing new 2.0 syntax validators.
+				 :rules_valid_but_blocked,
+				 :rules_invalid, #Valid 1.0 rules not passing new 2.0 syntax validators.
 				 :rules_deprecated,
 				 :credentials,
 				 :options,
-				 :rules_translator,
+				 :rules_translator, #an instance of RuleTranslator class. 
 				 :http
 
    #Gotta supply account and settings files.
@@ -36,13 +41,13 @@ class RulesMigrator
 	  @options = {:verbose => true, :write_rules_to => 'api', :rules_folder => './rules', :load_files => false}
 	  @rules_translated = []
 	  @rules_invalid = []
-	  @rules_already_existing = []
+	  @rules_valid_but_blocked = []
 	  @rules_deprecated = []
 
 	  set_credentials(accounts)
 	  set_options(settings)
 	  set_http
-	  
+
 	  @rules_translator = RuleTranslator.new
    end
 
@@ -120,6 +125,40 @@ class RulesMigrator
 
    end
 
+   def split_request all_rules_request, size_limit
+
+	  puts "Request payload size: #{all_rules_request.bytesize}"
+
+	  number_of_requests = (all_rules_request.bytesize / (size_limit.to_f * 1000000)).ceil
+	  number_of_requests = (number_of_requests * 1.1).ceil
+
+	  puts "Generating #{number_of_requests} requests..."
+
+	  request_hash = JSON.parse(all_rules_request)
+
+	  rules = request_hash['rules']
+
+	  slice = (rules.count / number_of_requests.to_f).ceil
+
+	  rule_request_sets = rules.each_slice(slice).to_a
+
+	  requests = []
+
+	  rule_request_sets.each do |set|
+		 #puts set.count
+
+		 #Make request
+		 request = {}
+		 request['rules'] = set
+
+		 requests << request.to_json
+
+	  end
+
+	  requests
+
+   end
+
    #Rules were loaded either from a single Rules API GET request, or loaded from a file.
    #The number of rules may be quite high (up to 250K), and the payload size big (150 MB and higher?).
    def create_post_requests(rules)
@@ -131,63 +170,26 @@ class RulesMigrator
 	  end
 
 	  requests = [] #Make take an array of requests to add rules to Target system. 
-	  
+
 	  request_data = {} #Start building hash for Rules API POST requests.
-	  request_data['rules'] = [] 
+	  request_data['rules'] = []
 
 	  rules.each do |rule|
 		 request_data['rules'] << rule
 	  end
-	  
+
 	  #Create JSON for request.
 	  request = request_data.to_json
-	  
+
 	  #Check size
 	  if request.bytesize < (max_payload_size_in_mb * 1000000)
 		 requests << request
 		 AppLogger.log_debug "Request has size: #{request.bytesize/1000} KB"
 	  else
-		 requests = split_request(request)
+		 requests = split_request(request, max_payload_size_in_mb)
 	  end
-	  
-	  requests
-	 
-=begin
-		 
-		 
-	 request_data['rules'] << rule
-
-
-		#request = request_data.to_json
-	 
-	    #puts "Size of 'request': #{request.bytesize}"
-	    puts "Size of 'request_data': #{ObjectSpace.memsize_of(request_data['rules'])}"
-	 
-		if request.bytesize > (max_payload_size_in_mb * 1000000)
-
-			#Save request, start over
-			requests << request
-			AppLogger.log_debug "Request has size: #{request.bytesize/1000} KB"
-			request_data['rules'] = [] #Initialize and re-add current rule.
-			request_data['rules'] << rule
-		end
-		 
-		 
-	  end
-
-	  if request_data['rules'].count > 0
-
-		 #TODO: handle JSON files for manual loading.
-		 request = request_data.to_json
-
-		 AppLogger.log_debug "Request has size: #{request.bytesize/1000} KB"
-		 requests << request
-	  end
-
-
 
 	  requests
-=end
 
    end
 
@@ -198,23 +200,25 @@ class RulesMigrator
 
 	  #TODO: handle response codes
 
-	  rules = JSON.parse(response.body)
+	  rules_payload = JSON.parse(response.body)
+	  rules = rules_payload['rules']
 
-	  AppLogger.log_info "    ... got #{rules['rules'].count} rules from #{system[:name]} system."
+	  AppLogger.log_info "    ... got #{rules.count} rules from #{system[:name]} system."
 	  AppLogger.log_debug "\n ******************"
 
-	  rules['rules']
+	  rules
+
    end
 
    #All things PowerTrack 1.0 --> 2.0 Operators. 
    def translate_rules(rules)
 
-	  AppLogger.log_info "Translating #{rules.count} rules..."
+	  AppLogger.log_info "Checking #{rules.count} rules for translation..."
 
 	  translated_rules = []
 
 	  rules.each do |rule|
-		 
+
 		 #Remove any rules with deprecated Operator.
 		 if @rules_translator.rule_has_deprecated_operator? rule
 			@rules_deprecated << rule
@@ -224,13 +228,13 @@ class RulesMigrator
 
 		 rule_translated = {}
 		 rule_translated['tag'] = rule['tag']
-		 
+
 		 rule_before = Marshal.load(Marshal.dump(rule))
 
 		 #rule_translated['value'] = RuleTranslator.check_rule(rule['value'])
-         rule_translated['value'] = @rules_translator.check_rule(rule['value'])
+		 rule_translated['value'] = @rules_translator.check_rule(rule['value'])
 
-		 
+
 		 if rule_before['value'] != rule_translated['value']
 			@rules_translated << "'#{rule_before['value']}' ----> '#{rule_translated['value']}'"
 		 end
@@ -238,11 +242,13 @@ class RulesMigrator
 		 translated_rules << rule_translated
 	  end
 
+	  AppLogger.log_info "Translated #{translated_rules.count} rules..."
+
 	  translated_rules
    end
 
    def make_rules_file(request)
-	  puts request
+	  #puts request
 
 	  num = 0
 
@@ -262,25 +268,62 @@ class RulesMigrator
 		 end
 	  end
 
-
    end
-   
-   
+
    def drop_bad_rules_from_request(request, rules_invalid)
-	  
+
+	  AppLogger.log_info "Dropping rules with syntax not supportted in version 2.0."
+
 	  request_hash = JSON.parse(request)
 	  rules = request_hash['rules']
+
+	  puts rules.count
 	  
+	  rules_invalid.each do |badrule|
+		 puts badrule
+	  end
+
 	  rules.each do |rule|
 		 if rules_invalid.include?(rule['value'])
+
+			puts rule['value']
+
 			rules.delete(rule)
+
 		 end
 	  end
 
+	  puts rules.count
+
 	  #Reassemble request
-	  request = {} 
+	  request = {}
 	  request['rules'] = rules
 	  request.to_json
+   end
+
+
+   def sanitize_rules rules
+
+
+	  rules.each do |rule|
+
+		 before = rule['value'].dup
+
+		 rule['value'].gsub!("’", "'") #right single quotation mark
+		 rule['value'].gsub!("‘", "'") #left single quotation mark
+		 rule['value'].gsub!("‛", "'") #single high-reversed-9 quotation mark
+
+		 rule['value'].gsub!('“', '\"') #left double quotation mark
+		 rule['value'].gsub!('”', '\"') #right double quotation mark
+		 rule['value'].gsub!('„', '\"') #double low-9 quotation mark
+
+		 if before != rule['value']
+			"Sanitized a rule: #{before}"
+		 end
+	  end
+
+	  rules
+
    end
 
    def post_rules(target)
@@ -289,19 +332,24 @@ class RulesMigrator
 
 	  AppLogger.log_info "Posting rules to #{target[:name]} system."
 
+
+	  #Temp code for handling 'special' characters
+	  #target[:rules] = sanitize_rules(target[:rules])
+
 	  #return nil if url includes? source
 	  requests = create_post_requests(target[:rules])
 
 	  requests.each do |request|
 
-		 if @options[:write_rules_to] == 'files' and not @options['write_to_file'].nil?
+		 if @options[:write_rules_to] == 'files' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
 
 			make_rules_file request
 
 		 else # writing to 'api', so POST the requests.
 
 			begin
-			   response = @http.POST(target[:url], request)
+
+			   response = @http.POST(target[:url], request, {"content-type" => "application/json", "accept" => "application/json"})
 			   #response_json = response.body.to_json
 			   response_hash = JSON.parse(response.body)
 
@@ -325,40 +373,122 @@ class RulesMigrator
 
 				  #"{"summary":{"created":8,"not_created":5},"detail":[{"rule":{"value":"(lang:en OR lang:en OR lang:und) Gnip","tag":null,"id":710911249710653441},"created":true},{"rule":{"value":"(place:minneapolis OR bio:minnesota) (snow OR rain)","tag":null,"id":710911249735811073},"created":true},{"rule":{"value":"-lang:und (snow OR rain)","tag":null,"id":710911249735753728},"created":true},{"rule":{"value":"(lang:en) place_country_code:us bio:Twitter","tag":null,"id":710911249706409985},"created":true},{"rule":{"value":"(lang:en OR lang:und OR lang:en) Gnip","tag":null,"id":710911249735749632},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null,"id":710911249702191104},"created":true},{"rule":{"value":"lang:en Gnip","tag":null,"id":710911249735757825},"created":true},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null,"id":710911249706422273},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"lang:en Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"}]}"
 
-			   else #TODO: handle errors. 
-				  
-				  if response_hash['summary'].nil? #This is something the non-Rules API/syntax error. 
+			   else #TODO: handle errors.
+
+				  if response_hash['summary'].nil? #This is something the non-Rules API/syntax error.
 					 AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
 				  else #Request was processed, but probably at least one rule was invalid w.r.t. to PT 2.0.
-					 
+
 					 #Idea here is to drop the bad rules, and retry, logging the bad rules....
-					 
+
 					 AppLogger.log_info "No rules were created. Here are the offending rules:"
-					 
+
 					 response_hash['detail'].each do |detail|
 						if detail['created'] == false and not detail['message'].nil?
 						   AppLogger.log_info "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
-						   
+
 						   #if detail['message'] about new 2.0 syntax validator.
 						   invalid_msg = "#{detail['rule']['value']} | #{detail['message']}"
 						   @rules_invalid << detail['rule']['value']
-						   
+
 						elsif detail['created'] == false and detail['message'].nil?
-						   AppLogger.log_debug "Rule '#{detail['rule']['value']}' was not created because it already exists."
-
-						   @rules_already_existing << detail['rule']
-
+						   #AppLogger.log_debug "Rule '#{detail['rule']['value']}' is version 2.0 ready, but blocked."
+						   #@rules_valid_but_blocked << detail['rule']
 						end
 					 end
 
 					 if @rules_invalid.count > 0
 						request = drop_bad_rules_from_request(request, @rules_invalid)
-
+						AppLogger.log_info "Retrying after removing #{@rules_invalid.count} bad 2.0 s@rules_invalidyntax rules...."
 						response = @http.POST(target[:url], request)
 						if response.code == '200' or response.code == '201'
-						   AppLogger.log_info "Retry after removing bad 2.0 syntax rules succeeded."
+						   AppLogger.log_info "Retry succeeded."
 						else
-						   AppLogger.log_error "Retry failed... "
+						   AppLogger.log_error "Retry failed. "
+						end
+					 end
+				  end
+			   end
+			rescue
+			   sleep 5
+			   response = @http.POST(target[:url], request) #try again
+			end
+		 end
+	  end
+
+	  true
+   end
+
+   def delete_rules(target)
+
+	  return false if target[:name].downcase == 'source'
+
+	  AppLogger.log_info "Deleting rules from #{target[:name]} system."
+
+	  #return nil if url includes? source
+	  requests = create_post_requests(target[:rules])
+
+	  requests.each do |request|
+
+		 if @options[:write_rules_to] == 'files' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
+
+			make_rules_file request
+
+		 else # writing to 'api', so POST the requests.
+
+			begin
+			   parameters = {}
+			   parameters['_method'] = 'delete'
+			   response = @http.POST(target[:url], request, nil, parameters)
+			   response_hash = JSON.parse(response.body)
+
+			   AppLogger.log_debug "response code: #{response.code} | message: #{response.message} "
+
+			   if response.code == '200' or response.code == '201'
+				  AppLogger.log_info "Successfully deleted rules from target system."
+
+				  #Although we have a 201, it is possible some were not created since they already exist.
+				  AppLogger.log_info "#{response_hash['summary']['deleted']} rules were deleted."
+
+				  if response_hash['summary']['not_deleted'] > 0
+					 AppLogger.log_info "#{response_hash['summary']['not_deleted']} rules were NOT deleted."
+
+				  end
+
+				  #"{"summary":{"created":8,"not_created":5},"detail":[{"rule":{"value":"(lang:en OR lang:en OR lang:und) Gnip","tag":null,"id":710911249710653441},"created":true},{"rule":{"value":"(place:minneapolis OR bio:minnesota) (snow OR rain)","tag":null,"id":710911249735811073},"created":true},{"rule":{"value":"-lang:und (snow OR rain)","tag":null,"id":710911249735753728},"created":true},{"rule":{"value":"(lang:en) place_country_code:us bio:Twitter","tag":null,"id":710911249706409985},"created":true},{"rule":{"value":"(lang:en OR lang:und OR lang:en) Gnip","tag":null,"id":710911249735749632},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null,"id":710911249702191104},"created":true},{"rule":{"value":"lang:en Gnip","tag":null,"id":710911249735757825},"created":true},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null,"id":710911249706422273},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"lang:en Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"}]}"
+
+			   else #TODO: handle errors.
+
+				  if response_hash['summary'].nil? #This is something the non-Rules API/syntax error.
+					 AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
+				  else #Request was processed, but probably at least one rule was invalid w.r.t. to PT 2.0.
+
+					 #Idea here is to drop the bad rules, and retry, logging the bad rules....
+
+					 AppLogger.log_info "No rules were created. Here are the offending rules:"
+
+					 response_hash['detail'].each do |detail|
+						if detail['created'] == false and not detail['message'].nil?
+						   AppLogger.log_info "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
+
+						   #if detail['message'] about new 2.0 syntax validator.
+						   invalid_msg = "#{detail['rule']['value']} | #{detail['message']}"
+						   @rules_invalid << detail['rule']['value']
+
+						elsif detail['created'] == false and detail['message'].nil?
+						   #AppLogger.log_debug "Rule '#{detail['rule']['value']}' is version 2.0 ready, but blocked."
+						   #@rules_valid_but_blocked << detail['rule']
+						end
+					 end
+
+					 if @rules_invalid.count > 0
+						request = drop_bad_rules_from_request(request, @rules_invalid)
+						AppLogger.log_info "Retrying after removing bad 2.0 syntax rules...."
+						response = @http.POST(target[:url], request)
+						if response.code == '200' or response.code == '201'
+						   AppLogger.log_info "Retry succeeded."
+						else
+						   AppLogger.log_error "Retry failed. "
 						end
 					 end
 				  end
@@ -400,19 +530,19 @@ class RulesMigrator
 	  if rules.nil?
 		 AppLogger.log_error "Problem loading Source rules from file."
 	  else
-		@source[:num_rules_before] = rules.count
+		 @source[:num_rules_before] = rules.count
 	  end
 
 	  rules
    end
-   
+
 
    def write_summary
 	  #Number of rules for source and target (before and after).
 	  puts '---------------------'
 	  puts "Rule Migrator summary"
-	  
-	  
+
+
 	  puts ''
 	  puts '---------------------'
 	  puts 'Source system:'
@@ -424,18 +554,18 @@ class RulesMigrator
 	  puts "   	Target[:url] = #{@target[:url]}"
 	  puts "   	Target system had #{@target[:num_rules_before]} rules before, and #{@target[:num_rules_after]} rules after."
 	  puts "    Number of rules translated: #{@rules_translated.count}"
-	  
+
 	  puts ''
 	  #Note any rules that needed to be 'translated'.
 	  puts '---------------------'
 	  if @rules_translated.count > 0
-		 
+
 		 puts "#{rules_translated.count} Source rules were translated:"
 		 @rules_translated.each do |rule|
 			puts "   #{rule}"
 		 end
 	  end
-	  
+
 	  puts ''
 	  #Rules that could not be added to version 2.0
 	  puts '---------------------'
@@ -451,18 +581,6 @@ class RulesMigrator
 	  puts ''
 	  #Rules that already existed.
 	  puts '---------------------'
-	  if @rules_already_existing.count > 0
-
-		 puts "#{@rules_already_existing.count} Source rules already exist in Target system."
-		 @rules_already_existing.each do |rule|
-			puts "   #{rule['value']}"
-		 end
-	  end
-	  puts ''
-
-	  puts ''
-	  #Rules that already existed.
-	  puts '---------------------'
 	  if @rules_deprecated.count > 0
 
 		 puts "#{@rules_deprecated.count} Source rules contain deprecated Operators with no equivalent in version 2.0:."
@@ -471,8 +589,17 @@ class RulesMigrator
 		 end
 	  end
 	  puts ''
-	  
-	  
-   end
 
+	  #puts ''
+	  #Rules that already existed.
+	  #puts '---------------------'
+	  #if @rules_valid_but_blocked.count > 0
+
+	  #	 puts "#{@rules_valid_but_blocked.count} Source rules already exist in Target system."
+	  #	 @rules_valid_but_blocked.each do |rule|
+	  #		puts "   #{rule['value']}"
+	  #	 end
+	  #end
+	  #puts ''
+   end
 end

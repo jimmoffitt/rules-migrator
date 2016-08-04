@@ -1,6 +1,6 @@
 require 'optparse'
 
-require_relative './common/app_logger'
+require_relative './lib/common/app_logger'
 require_relative './lib/rules_migrator'
 
 def parseOptions(o)
@@ -14,15 +14,24 @@ def parseOptions(o)
    settings['verbose'] = nil
    settings['write_rules_to'] = nil
    settings['load_files'] = nil
+   settings['file'] = nil
 
    #Passing in a config file.... Or you can set a bunch of parameters.
    o.on('-a ACCOUNT', '--account', 'Account configuration file (including path) that provides OAuth settings.') { |account| settings['account']= account }
    o.on('-c CONFIG', '--config', 'Settings configuration file (including path) that provides API settings.') { |config| settings['config'] = config }
+   
    o.on('-s SOURCE', '--source', "Rules API URL for GETting 'Source' rules.") { |source| settings['source'] = source }
    o.on('-t TARGET', '--target', "Rules API URL for POSTing rules to 'Target' system.") { |target| settings['target'] = target }
-   o.on('-w WRITE', '--write', "Write rules to either 'files' or Target Rules 'api'") { |write| settings['write_rules_to'] = write }
-   o.on('-l', '--load', "If inbox has files, load them into 'Target' system") { |load| settings['load_files'] = load }
+   
+   o.on('-r', '--report', "Just generate rule migration report, do not make any updates.'") { |report| settings['report'] = report }
+   o.on('-f FILE', '--file', "Load specified Rules JSON file into 'Target' system") { |file| settings['file_to_load'] = file }
 
+   #TODO: this needs design attention. Sets 'mode' setting, indicating whether to write 'file', or straight to Target Rules API?  
+   o.on('-w WRITE', '--write', "Write rules to either JSON file or POST to Target Rules API. Choices: \"files\" or \"api\".") { |write| settings['write_rules_to'] = write }
+
+   #TODO: this needs design attention too. An automation mode that is likely overkill.
+   o.on('-l', '--load', "If inbox has files, load them into 'Target' system") { |load| settings['load_files'] = load }
+   
    o.on('-v', '--verbose', 'When verbose, output all kinds of things, each request, most responses, etc.') { |verbose| $verbose = verbose }
    o.on('-h', '--help', 'Display this screen.') do
 	  puts o #Help screen.
@@ -71,15 +80,20 @@ if __FILE__ == $0 #This script code is executed when running this file.
 
    if continue 
 
-	  #Load Target rules.
+	 #Load Target rules.
 	 Migrator.target[:rules] = Migrator.load_rules(Migrator.target)
 	 continue = false if Migrator.target[:rules].nil?
-	 
+
 	 #Load Source rules.
-	 Migrator.source[:rules] = Migrator.load_rules(Migrator.source) if continue
+	 if settings['file_to_load'].nil? #Retrieving rules from Source Rules API.	 
+		 Migrator.source[:rules] = Migrator.load_rules(Migrator.source) if continue
+	 else #Loading from file.
+		Migrator.source[:rules] = Migrator.load_rules_from_file(settings['file_to_load']) if continue
+	 end
+
 	 continue = false if Migrator.source[:rules].nil?
 	 Migrator.source[:num_rules] = Migrator.source[:rules].count #TODO: Why set here?
-
+		 
      #Do translation if going 'up-version' (PT 1.0 --> 2.0).
 	 if Migrator.do_rule_translation
 	    Migrator.target[:rules] = Migrator.translate_rules(Migrator.source[:rules])
