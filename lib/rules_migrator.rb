@@ -23,29 +23,42 @@ class RulesMigrator
 				 :source_version,
 				 :target,
 				 :target_version,
-				 :do_rule_translation,
-				 :rules_translated,
-				 :rules_valid_but_blocked,
-				 :rules_invalid, #Valid 1.0 rules not passing new 2.0 syntax validators.
-				 :rules_deprecated,
 				 :credentials,
-				 :options,
+				 :options, #hash of options such as :write_mode, :rules_folder, :load_files
+				 :do_rule_translation,
+				 :report_only, #boolean
+
+				 :rules_ok, #Rules that did not require any translation.
+				 :rules_translated, #Rules that were translated.
+				 :rules_invalid, #Valid 1.0 rules not passing new 2.0 syntax validators.
+				 :rules_deprecated, #1.0 Rules with deprecated Operators.
+				 :rules_valid_but_blocked, #Any remaining 2.0 validation questions?
+
 				 :rules_translator, #an instance of RuleTranslator class. 
 				 :http
 
    #Gotta supply account and settings files.
-   def initialize(accounts, settings, verbose = nil)
-	  @source = {:url => '', :rules => [], :num_rules => 0, :name => 'Source'}
-	  @target = {:url => '', :rules => [], :num_rules_before => 0, :num_rules_after => 0, :name => 'Target'}
+   def initialize(account_file, config_file)
+	  @source = {:url => '', :rules_json => [], :num_rules => 0, :name => 'Source'}
+	  @target = {:url => '', :rules_json => [], :num_rules_before => 0, :num_rules_after => 0, :name => 'Target'}
 	  @credentials = {:user_name => '', :password => ''}
-	  @options = {:verbose => true, :write_rules_to => 'api', :rules_folder => './rules', :load_files => false}
+	  @options = {:verbose => true, 
+				  :write_mode => 'files', 
+				  :rules_folder => './rules', 
+				  :rules_json_to_post => nil,
+				  :load_files => false,
+				  :report_only => true
+	  }
+
+	  #Report metrics.
+	  @rules_ok = [] #For same-version migrations, all should be OK.
 	  @rules_translated = []
 	  @rules_invalid = []
-	  @rules_valid_but_blocked = []
 	  @rules_deprecated = []
+	  @rules_valid_but_blocked = []
 
-	  set_credentials(accounts)
-	  set_options(settings)
+	  set_credentials(account_file)
+	  set_options(config_file)
 	  set_http
 
 	  @rules_translator = RuleTranslator.new
@@ -57,9 +70,9 @@ class RulesMigrator
 	  @http.password = @credentials[:password]
    end
 
-   def set_credentials(file)
+   def set_credentials(account_file)
 	  begin
-		 credentials = YAML::load_file(file)
+		 credentials = YAML::load_file(account_file)
 		 @credentials = credentials['account'].each_with_object({}) { |(k, v), memo| memo[k.to_sym] = v }
 	  rescue
 		 AppLogger.log_error "Error trying to load account settings. Could not parse account YAML file. Quitting."
@@ -67,22 +80,27 @@ class RulesMigrator
 	  end
    end
 
-   def set_options(file)
+   def set_options(config_file)
 	  begin
-		 options = YAML::load_file(file)
+		 options = YAML::load_file(config_file)
 	  rescue
-		 AppLogger.log_error "Error loading/parsing  #{file}. Expecting YAML. Check file details."
+		 AppLogger.log_error "Error loading/parsing  #{config_file['options']}. Expecting YAML. Check file details."
 		 return nil
 	  end
 
 	  begin #Now parse contents and load separate attributes.
 		 @source[:url] = options['source']['url'] #Load Source details.
-		 @target[:url] = options['target']['url'] #Load Target details
-
-		 @options[:write_rules_to] = options['options']['write_rules_to']
+		 begin
+			@target[:url] = options['target']['url']
+		 rescue
+			@target[:url] = nil
+		 end
+		 #Load Target details
+		 @options[:write_mode] = options['options']['write_mode']
 		 @options[:rules_folder] = options['options']['rules_folder']
-		 @options[:load_files] = options['options']['load_files']
+		 @options[:rules_json_to_post] = options['options']['rules_json_to_post']
 		 @options[:verbose] = options['options']['verbose']
+		 #@options[:load_files] = options['options']['load_files'] #TODO: this not a config option, rather a control variable.
 
 		 #Create folder if they do not exist.
 		 if (!File.exist?(@options[:rules_folder]))
@@ -106,10 +124,14 @@ class RulesMigrator
 		 @source_version = 2
 	  end
 
-	  if target_url.include? 'twitter.com'
-		 @target_version = 2
+	  if !target_url.nil?
+		 if target_url.include? 'twitter.com'
+			@target_version = 2
+		 else
+			@target_version = 1
+		 end
 	  else
-		 @target_version = 1
+		 @target_version = 2 #Note: if no target specified, we are assuming this is a '2.0 readiness report'.
 	  end
 
 	  if @source_version > @target_version
@@ -193,9 +215,9 @@ class RulesMigrator
 
    end
 
-   def get_rules(system)
+   def get_rules_from_api(system)
 
-	  AppLogger.log_info "Getting rules from #{system[:name]} system..."
+	  AppLogger.log_info "Getting rules from #{system[:name]} system. Making Request to Rules API..."
 	  response = @http.GET(system[:url])
 
 	  #TODO: handle response codes
@@ -212,17 +234,17 @@ class RulesMigrator
 
    #All things PowerTrack 1.0 --> 2.0 Operators. 
    def translate_rules(rules)
-
+	  
 	  AppLogger.log_info "Checking #{rules.count} rules for translation..."
 
-	  translated_rules = []
+	  processed_rules = []
 
 	  rules.each do |rule|
-
+		 
 		 #Remove any rules with deprecated Operator.
 		 if @rules_translator.rule_has_deprecated_operator? rule
 			@rules_deprecated << rule
-			rules.delete rule
+			puts "Skipping deprecated rule"
 			next
 		 end
 
@@ -231,20 +253,22 @@ class RulesMigrator
 
 		 rule_before = Marshal.load(Marshal.dump(rule))
 
-		 #rule_translated['value'] = RuleTranslator.check_rule(rule['value'])
 		 rule_translated['value'] = @rules_translator.check_rule(rule['value'])
-
+		 
+		 #puts rule_before['value'] + " ---->  " +  rule_translated['value']
 
 		 if rule_before['value'] != rule_translated['value']
 			@rules_translated << "'#{rule_before['value']}' ----> '#{rule_translated['value']}'"
+		 else 
+			@rules_ok << "'#{rule_before['value']}'"
 		 end
 
-		 translated_rules << rule_translated
+		 processed_rules << rule_translated
 	  end
 
-	  AppLogger.log_info "Translated #{translated_rules.count} rules..."
+	  AppLogger.log_info "Processed #{processed_rules.count} rules..."
 
-	  translated_rules
+	  processed_rules
    end
 
    def make_rules_file(request)
@@ -278,7 +302,7 @@ class RulesMigrator
 	  rules = request_hash['rules']
 
 	  puts rules.count
-	  
+
 	  rules_invalid.each do |badrule|
 		 puts badrule
 	  end
@@ -337,11 +361,11 @@ class RulesMigrator
 	  #target[:rules] = sanitize_rules(target[:rules])
 
 	  #return nil if url includes? source
-	  requests = create_post_requests(target[:rules])
+	  requests = create_post_requests(target[:rules_json])
 
 	  requests.each do |request|
 
-		 if @options[:write_rules_to] == 'files' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
+		 if @options[:write_mode] == 'files' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
 
 			make_rules_file request
 
@@ -426,11 +450,11 @@ class RulesMigrator
 	  AppLogger.log_info "Deleting rules from #{target[:name]} system."
 
 	  #return nil if url includes? source
-	  requests = create_post_requests(target[:rules])
+	  requests = create_post_requests(target[:rules_json])
 
 	  requests.each do |request|
 
-		 if @options[:write_rules_to] == 'files' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
+		 if @options[:write_mode] == 'files' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
 
 			make_rules_file request
 
@@ -504,25 +528,28 @@ class RulesMigrator
    end
 
 
-   def load_rules system, before = true
+   def GET_rules system, before = true
 
-	  system[:rules] = get_rules(system)
+	  system[:rules_json] = get_rules_from_api(system)
 
-	  if system[:rules].nil?
+	  if system[:rules_json].nil?
 		 AppLogger.log_error "Problem checking #{system[:name]} rules."
 	  else
 		 if before
-			system[:num_rules_before] = system[:rules].count
+			system[:num_rules_before] = system[:rules_json].count
 		 else
-			system[:num_rules_after] = system[:rules].count
+			system[:num_rules_after] = system[:rules_json].count
 		 end
 	  end
 
-	  system[:rules]
+	  system[:rules_json]
 
    end
 
    def load_rules_from_file rules_file #By definition, this loading is only for a Source system.
+	  
+	  #TODO: add support for all files in a specified folder?  Probably overkill.
+
 	  rules = File.read(rules_file)
 	  rules_hash = JSON.parse(rules)
 	  rules = rules_hash['rules']
@@ -542,19 +569,23 @@ class RulesMigrator
 	  puts '---------------------'
 	  puts "Rule Migrator summary"
 
-
 	  puts ''
 	  puts '---------------------'
 	  puts 'Source system:'
 	  puts "	Source[:url] = #{@source[:url]}"
 	  puts "	Source system has #{@source[:num_rules_before]} rules."
-	  puts "    Number of rules with version 1.0 syntax not supported in version 2.0: #{@rules_invalid.count}"
+	  puts "	Source system has #{@rules_ok.count} rules ready for version 2."
+	  puts "	Source system has #{@rules_translated.count} rules that were translated to version 2."
+	  puts "    Source system has #{@rules_deprecated.count} rules with version 1.0 syntax not supported in version 2.0."
+	  
 	  puts ''
-	  puts 'Target system:'
-	  puts "   	Target[:url] = #{@target[:url]}"
-	  puts "   	Target system had #{@target[:num_rules_before]} rules before, and #{@target[:num_rules_after]} rules after."
-	  puts "    Number of rules translated: #{@rules_translated.count}"
-
+	  
+	  if not @report_only
+		 puts 'Target system:'
+		 puts "   	Target[:url] = #{@target[:url]}"
+		 puts "   	Target system had #{@target[:num_rules_before]} rules before, and #{@target[:num_rules_after]} rules after."
+		 puts "    Number of rules translated: #{@rules_translated.count}"
+      end
 	  puts ''
 	  #Note any rules that needed to be 'translated'.
 	  puts '---------------------'

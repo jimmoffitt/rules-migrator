@@ -14,10 +14,12 @@ This tool has three main use-cases:
 + Clones PowerTrack version 1.0 (PT 1.0) rules to PowerTrack version 2.0 (PT 2.0).
 + Clones real-time rules to Replay streams. 
 + Clones rules between real-time streams, such as 'dev' to 'prod' streams.
- 
-Given the high volumes of real-time Twitter data, it is highly recommended that rules are reviewed before adding to a live stream. If you are deploying a new PowerTrack stream, this tool can be use to migrate the rules, then verify your ruleset before connecting to the new stream 
 
-For more information on migrating PowerTrack rules from one stream to another, see [this Gnip support article](http://support.gnip.com/articles/rules-migrator.html).
+If you are deploying a new PowerTrack stream, this tool can be use to migrate the rules, then verify your ruleset before connecting to the new stream. 
+ 
+Given the high volumes of real-time Twitter data, it is a best practice to review any and all rules  before adding to a live production stream. It is highly recommended that you initially build your ruleset on a non-production stream before moving to a production stream. Most Gnip customers have a development/sandbox stream deployed for their internal testing. If you have never had a 'dev' stream for development and testing, they come highly recommended. If you are migrating to PowerTrack 2.0, you have the option to use the new PowerTrack 2.0 stream as a development stream during the 30-day migration period. 
+
+For more information on migrating PowerTrack rules from one stream to another, see [this Gnip support article](http://support.gnip.com/articles/migrating-powertrack-rules.html).
 
 The rest of this document focuses on the Ruby example app used to migrate rules.
 
@@ -25,19 +27,24 @@ The rest of this document focuses on the Ruby example app used to migrate rules.
 
 Here are some common user-stories that drove the development of this app:
 
++ As a real-time PowerTrack 1.0 customer, I want to know what shape my ruleset is in w.r.t. Gnip 2.0.
 + As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
 + As a real-time PowerTrack (1.0 or 2.0) customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
 + As a Replay customer, I want to clone my real-time rules to my Replay stream.
 
 ## Features  <a id="features" class="tall">&nbsp;</a>
 
-+ When migrating rules from version 1.0 to 2.0, translates rules when possible.
++ When migrating rules from version 1.0 to 2.0, this tool translates rules when possible.
   + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated, and are instead logged.  
++ Supports generating a rules report, providing feedback on readiness for PowerTrack 2.0.  
 + Migrates rules tags.
 + Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
-+ Provides 'output' options for:
++ Provides two 'output' options:
   + Writing write rules JSON to a local file.
   + POSTing rules to the target system using the PowerTrack Rules API.
+  
+  Note that this tool does not currently save the batched JSON payloads, and only single complete ruleset files are ever written. (This functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method.)
+  
 
 ### Fundamental Details <a id="fundamental-details" class="tall">&nbsp;</a>
 
@@ -98,15 +105,18 @@ There are also a set of [command-line parameters](#command-line-options) that wi
 
 #### Account credentials <a id="account-credentials" class="tall">&nbsp;</a>
 
+File name and location defaults to ./config/account.yaml.
+
 ```
  account:
    account_name: my_account_name
    user_name: my_username_email
-   password:
+   password: NotMyPassword
 ```
 
 #### Application Options <a id="application-options" class="tall">&nbsp;</a>
 
+File name and location defaults to ./config/options.yaml
 
 
 ```
@@ -128,13 +138,36 @@ There are also a set of [command-line parameters](#command-line-options) that wi
    warn_level: debug
    size: 1 #MB
    keep: 2
+   
 ```
 
 #### Command-line Options <a id="command-line-options" class="tall">&nbsp;</a>
 
 
+```
+Usage: rule_migrator_app [options]
+    -a, --account ACCOUNT            Account configuration file (including path) that provides OAuth settings.
+    -c, --config CONFIG              Settings configuration file (including path) that provides API settings.
+    -s, --source SOURCE              Rules API URL for GETting 'Source' rules.
+    -t, --target TARGET              Rules API URL for POSTing rules to 'Target' system.
+    -w, --write WRITE                Write rules to either 'files' or Target Rules 'api'
+    -l, --load                       If inbox has files, load them into 'Target' system
+    -v, --verbose                    When verbose, output all kinds of things, each request, most responses, etc.
+    -h, --help                       Display this screen.
+```
 
 
+TODO: documentation - example calls:
+rule_migrator_app -r -s "https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/dev/rules.json"
+rule_migrator_app -w "files" -s "https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/dev/rules.json"
+
+Cloned URL
+rule_migrator_app -w "api" -s "https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/dev/rules.json" -t "clone"
+
+Verbose URLs
+rule_migrator_app -w "api" -s "https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/dev/rules.json" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/jim/publishers/twitter/prod.json"
+
+rule_migrator_app -l - -t "https://gnip-api.twitter.com/rules/powertrack/accounts/jim/publishers/twitter/prod.json"
 
 
 
@@ -270,6 +303,9 @@ Other substring matching Operators are being equivalent token-based Operators. T
   
   + API → JSON → get_rules() → hash
   + APP → hash → post_rules() → JSON
+
+
+
 
 
 

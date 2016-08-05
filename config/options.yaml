@@ -5,14 +5,14 @@ target: #Target stream for rules.
   url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/<LABEL>.json
 
 options:
-  write_rules_to: files         #options: files, api
-  rules_folder: ./rules         #If generating rule files, where to write them.
-  load_files: false             #If we find files in 'rules_folder' load those into Target system.
-  verbose: true                 #When true, the app writes more to system out.
+  write_mode: files           #Options: files, api
+  rules_folder: ./rules       #If generating rule JSON files, where to write them. Also source for JSON payloads to POST.
+  rules_json_to_post: ''      #Either a single file (path and name) or a rules folder. If either, load those into Target system.
+  verbose: true               #When true, the app writes more to system out.
   
 logging:
   name: rule_migrator.log
   log_path: ./log
-  warn_level: debug
+  warn_level: info
   size: 1 #MB
-  keep: 2
+  keep: 1
