@@ -32,6 +32,7 @@ class RulesMigrator
 				 :rules_translated, #Rules that were translated.
 				 :rules_invalid, #Valid 1.0 rules not passing new 2.0 syntax validators.
 				 :rules_deprecated, #1.0 Rules with deprecated Operators.
+				 :rules_already_exist,
 				 :rules_valid_but_blocked, #Any remaining 2.0 validation questions?
 
 				 :rules_translator, #an instance of RuleTranslator class. 
@@ -55,6 +56,7 @@ class RulesMigrator
 	  @rules_translated = []
 	  @rules_invalid = []
 	  @rules_deprecated = []
+	  @rules_already_exist = []
 	  @rules_valid_but_blocked = []
 
 	  set_credentials(account_file)
@@ -100,7 +102,6 @@ class RulesMigrator
 		 @options[:rules_folder] = options['options']['rules_folder']
 		 @options[:rules_json_to_post] = options['options']['rules_json_to_post']
 		 @options[:verbose] = options['options']['verbose']
-		 #@options[:load_files] = options['options']['load_files'] #TODO: this not a config option, rather a control variable.
 
 		 #Create folder if they do not exist.
 		 if (!File.exist?(@options[:rules_folder]))
@@ -354,9 +355,6 @@ class RulesMigrator
 
 	  return false if target[:name].downcase == 'source'
 
-	  AppLogger.log_info "Posting rules to #{target[:name]} system."
-
-
 	  #Temp code for handling 'special' characters
 	  #target[:rules] = sanitize_rules(target[:rules])
 
@@ -365,13 +363,14 @@ class RulesMigrator
 
 	  requests.each do |request|
 
-		 if @options[:write_mode] == 'files' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
-
+		 if @options[:write_mode] == 'files' and @options[:rules_json_to_post].nil?
+			AppLogger.log_info "Writing rules to a JSON file."
 			make_rules_file request
-
 		 else # writing to 'api', so POST the requests.
 
 			begin
+
+			   AppLogger.log_info "Posting rules to #{target[:name]} Rules API."
 
 			   response = @http.POST(target[:url], request, {"content-type" => "application/json", "accept" => "application/json"})
 			   #response_json = response.body.to_json
@@ -386,18 +385,26 @@ class RulesMigrator
 				  AppLogger.log_info "#{response_hash['summary']['created']} rules were created."
 
 				  if response_hash['summary']['not_created'] > 0
-					 AppLogger.log_info "#{response_hash['summary']['not_created']} rules were NOT created."
+					 AppLogger.log_debug "#{response_hash['summary']['not_created']} rules were NOT created."
 
 					 response_hash['detail'].each do |detail|
 						if detail['created'] == false
 						   AppLogger.log_debug "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
+
+						   if detail['message'].include?("rule with this value already exists")
+							  @rules_already_exist << detail['rule']['value']
+					       end
 						end
 					 end
 				  end
 
 				  #"{"summary":{"created":8,"not_created":5},"detail":[{"rule":{"value":"(lang:en OR lang:en OR lang:und) Gnip","tag":null,"id":710911249710653441},"created":true},{"rule":{"value":"(place:minneapolis OR bio:minnesota) (snow OR rain)","tag":null,"id":710911249735811073},"created":true},{"rule":{"value":"-lang:und (snow OR rain)","tag":null,"id":710911249735753728},"created":true},{"rule":{"value":"(lang:en) place_country_code:us bio:Twitter","tag":null,"id":710911249706409985},"created":true},{"rule":{"value":"(lang:en OR lang:und OR lang:en) Gnip","tag":null,"id":710911249735749632},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null,"id":710911249702191104},"created":true},{"rule":{"value":"lang:en Gnip","tag":null,"id":710911249735757825},"created":true},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null,"id":710911249706422273},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"lang:en Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"}]}"
 
-			   else #TODO: handle errors.
+				  if not @options[:rules_json_to_post].nil? #Move file to 'uploaded' folder
+					 FileUtils.mv("#{@options[:rules_folder]}/#{@options[:rules_json_to_post]}", "#{@options[:rules_folder]}/uploaded/#{@options[:rules_json_to_post]}")
+				  end
+				  
+			   else
 
 				  if response_hash['summary'].nil? #This is something the non-Rules API/syntax error.
 					 AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
@@ -547,15 +554,13 @@ class RulesMigrator
    end
 
    def load_rules_from_file rules_file #By definition, this loading is only for a Source system.
-	  
-	  #TODO: add support for all files in a specified folder?  Probably overkill.
 
-	  rules = File.read(rules_file)
+	  rules = File.read("#{@options[:rules_folder]}/#{rules_file}")
 	  rules_hash = JSON.parse(rules)
 	  rules = rules_hash['rules']
 
 	  if rules.nil?
-		 AppLogger.log_error "Problem loading Source rules from file."
+		 AppLogger.log_error "Problem loading Source rules from file #{@options[:rules_folder]}/#{rules_file}."
 	  else
 		 @source[:num_rules_before] = rules.count
 	  end
@@ -577,6 +582,7 @@ class RulesMigrator
 	  puts "	Source system has #{@rules_ok.count} rules ready for version 2."
 	  puts "	Source system has #{@rules_translated.count} rules that were translated to version 2."
 	  puts "    Source system has #{@rules_deprecated.count} rules with version 1.0 syntax not supported in version 2.0."
+	  puts "    Target system already has #{@rules_already_exist.count} rules from Source system."
 	  
 	  puts ''
 	  
@@ -621,16 +627,16 @@ class RulesMigrator
 	  end
 	  puts ''
 
-	  #puts ''
+	  puts ''
 	  #Rules that already existed.
-	  #puts '---------------------'
-	  #if @rules_valid_but_blocked.count > 0
+	  puts '---------------------'
+	  if @rules_already_exist.count > 0
 
-	  #	 puts "#{@rules_valid_but_blocked.count} Source rules already exist in Target system."
-	  #	 @rules_valid_but_blocked.each do |rule|
-	  #		puts "   #{rule['value']}"
-	  #	 end
-	  #end
-	  #puts ''
+	  	 puts "#{@rules_already_exist.count} Source rules already exist in Target system."
+	  	 @rules_already_exist.each do |rule|
+	  		puts "   #{rule['value']}"
+	  	 end
+	  end
+	  puts ''
    end
 end

@@ -25,7 +25,7 @@ def parseOptions(o)
    o.on('-d DIRECTORY', '--directory', "Specify directory/folder for storing rule set JSON files. Default is './rules'.") { |directory| cmd_line_params['directory'] = directory }
 
    #TODO: this needs design attention. Sets 'mode' setting, indicating whether to write 'file', or straight to Target Rules API?  
-   cmd_line_params['write'] = nil
+   cmd_line_params['write_mode'] = nil
    o.on('-w WRITE', '--write', "Write rules to either JSON file or POST to Target Rules API. Choices: \"files\" or \"api\".") { |write| cmd_line_params['write_mode'] = write }
 
    #TODO: this needs design attention too.
@@ -52,7 +52,7 @@ def set_defaults cmd_line_params
    cmd_line_params['options'] = '../config/options.yaml' if cmd_line_params['options'].nil?
    cmd_line_params['verbose'] = true if cmd_line_params['verbose'].nil?
    cmd_line_params['write_mode'] = 'files' if cmd_line_params['write_mode'].nil?
-   cmd_line_params['directory'] = "./rule" if cmd_line_params['directory'].nil?
+   cmd_line_params['directory'] = "./rules" if cmd_line_params['directory'].nil?
 
    cmd_line_params
 end
@@ -78,10 +78,17 @@ if __FILE__ == $0 #This script code is executed when running this file.
    Migrator.source[:url] = cmd_line_params['source'] if !cmd_line_params['source'].nil?
    Migrator.target[:url] = cmd_line_params['target'] if !cmd_line_params['target'].nil?
    Migrator.report_only = cmd_line_params['report'] if !cmd_line_params['report'].nil?
-   Migrator.options[:write_mode] = cmd_line_params['write'] if !cmd_line_params['write'].nil?
+   Migrator.options[:write_mode] = cmd_line_params['write_mode'] if !cmd_line_params['write_mode'].nil?
    Migrator.options[:rules_folder] = cmd_line_params['directory'] if !cmd_line_params['directory'].nil?
    Migrator.options[:rules_json_to_post] = cmd_line_params['file'] if !cmd_line_params['file'].nil?
    Migrator.options[:verbose] = cmd_line_params['verbose'] if !cmd_line_params['verbose'].nil?
+   
+   #If both :rules_json_to_post and :write_mode == files are specified, default to writing JSON.
+   if not Migrator.options[:rules_json_to_post].nil? and Migrator.options[:write_mode] == 'files'
+	  Migrator.options[:rules_json_to_post] == nil
+	  AppLogger.log_info "Config says to both POST file to Rules API and write Source rules to file. Only writing JSON file."
+	  AppLogger.log_info "Unset 'write_mode' (-w command-line option) if you want to POST file to Rules API."
+   end
 
    #Affect the Logger w.r.t. user options. 
    AppLogger.verbose = Migrator.options[:verbose]
