@@ -53,19 +53,18 @@ Our example PT 1.0 ruleset consists of a variety of rules that illustrate how th
   
 ```  
   
-  "this long phrase is OK"
-  #ThinkSnow OR #WinterIsComing
-  has:profile_geo (shoes OR sandals)
+  "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100
+  lang:en (rain OR flood OR storm)
   
+  (twitter_lang:es OR twitter_lang:pt) (nieve OR lluvia OR tiempo OR viento OR tormenta OR granizada)
   (twitter_lang:es OR lang:es) playa sol
+  -has:lang (sol OR sun)
   (country_code:US OR profile_country_code:US) snow
   bio_contains:"developer advocate"
   place_contains:boulder OR bio_location_contains:boulder
-  -has:lang (sol OR sun)
   bio_name_contains:jim
-    
-  
   profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely
+  
   has:profile_geo_region (snow OR water)
   has:profile_geo_subregion (coffee OR tea)
   has:profile_geo_locality (motel OR hotel)
@@ -74,19 +73,29 @@ Our example PT 1.0 ruleset consists of a variety of rules that illustrate how th
 
 ```  
   
- ```
-  bio:"developer advocate"
-  lang:und (sol OR sun)
+```
+  "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100  
+  lang:en (rain OR flood OR storm)
+  
+  (lang:es OR lang:pt) (nieve OR lluvia OR tiempo OR viento OR tormenta OR granizada)
   (lang:es) playa sol
-  #ThinkSnow OR #WinterIsComing
-  profile_region:colorado OR profile_subregion:weld OR profile_locality:Greely
-  "this long phrase is OK"
+  lang:und (sol OR sun)
+  
   (place_country:US OR profile_country:US) snow
-  bio_name:jim
-  has:profile_geo (shoes OR sandals)
+  bio:"developer advocate"
   place:boulder OR bio_location:boulder
+  bio_name:jim
+  profile_region:colorado OR profile_subregion:weld OR profile_locality:Greely  
+  
 ```  
   
+Note that the five version 1.0 rules containing deprecated Operators could not be migrated to 2.0. However, there are likely candidate rules that would act as equivalents:
+
+ + has:profile_geo_region (snow OR water)
+ + has:profile_geo_subregion (coffee OR tea)
+ + has:profile_geo_locality (motel OR hotel)
+ + bio_lang:es "vamos a la playa"
+ + klout_score:40 klout_topic_contains:coffee
  
   
   
