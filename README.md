@@ -11,11 +11,12 @@
 This tool migrates PowerTrack rules from one stream to another. It uses the Rules API to get rules from a **‘Source’** stream, and adds those rules to a **‘Target’** stream. There is also an option to write the JSON payloads to a local file for review, and later loading into the 'Target' system.
 
 This tool has three main use-cases:
++ Provides feedback on your rule readiness for real-time PowerTrack 2.0.
 + Clones PowerTrack version 1.0 (PT 1.0) rules to PowerTrack version 2.0 (PT 2.0).
 + Clones real-time rules to Replay streams. 
 + Clones rules between real-time streams, such as 'dev' to 'prod' streams.
 
-If you are deploying a new PowerTrack stream, this tool can be use to migrate the rules, then verify your ruleset before connecting to the new stream. 
+If you are deploying a new PowerTrack stream, this tool can be use to create your 2.0 ruleset, translating when necessary, and dropping rules when necessary  migrate the rules, then verify your ruleset before connecting to the new stream. 
  
 Given the high volumes of real-time Twitter data, it is a best practice to review any and all rules  before adding to a live production stream. It is highly recommended that you initially build your ruleset on a non-production stream before moving to a production stream. Most Gnip customers have a development/sandbox stream deployed for their internal testing. If you have never had a 'dev' stream for development and testing, they come highly recommended. If you are migrating to PowerTrack 2.0, you have the option to use the new PowerTrack 2.0 stream as a development stream during the 30-day migration period. 
 
@@ -25,14 +26,14 @@ The rest of this document focuses on the Ruby example app used to migrate rules.
 
 ## User-stories  <a id="user-stories" class="tall">&nbsp;</a>
 
-Here are some common user-stories that drove the development of this app:
+Here are some common user-stories that drove the development of this tool:
 
 + As a real-time PowerTrack 1.0 customer, I want to know what shape my ruleset is in w.r.t. Gnip 2.0.
 + As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
 + As a real-time PowerTrack (1.0 or 2.0) customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
 + As a Replay customer, I want to clone my real-time rules to my Replay stream.
 
-## Features  <a id="features" class="tall">&nbsp;</a>
+## Migration Tool Features  <a id="features" class="tall">&nbsp;</a>
 
 + When migrating rules from version 1.0 to 2.0, this tool translates rules when possible.
   + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated, and are instead logged.  
@@ -45,6 +46,74 @@ Here are some common user-stories that drove the development of this app:
   
   Note that this tool does not currently save the batched JSON payloads, and only single complete ruleset files are ever written. (This functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method.)
   
+## Example PowerTrack 1.0 Ruleset
+
+Our example PT 1.0 ruleset consists of a variety of rules that illustrate how the Migration tool works. These include rules that are already completely compatiable with PT 2.0, along with some that contain deprecated Operators, and some that require some sort of translation before adding to 2.0. Note that the vast majority of PowerTrack 1.0 rules will be ready for 2.0 with any changes.
+  
+  
+```  
+  
+  "this long phrase is OK"
+  #ThinkSnow OR #WinterIsComing
+  has:profile_geo (shoes OR sandals)
+  
+  (twitter_lang:es OR lang:es) playa sol
+  (country_code:US OR profile_country_code:US) snow
+  bio_contains:"developer advocate"
+  place_contains:boulder OR bio_location_contains:boulder
+  -has:lang (sol OR sun)
+  bio_name_contains:jim
+    
+  
+  profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely
+  has:profile_geo_region (snow OR water)
+  has:profile_geo_subregion (coffee OR tea)
+  has:profile_geo_locality (motel OR hotel)
+  bio_lang:es "vamos a la playa"
+  klout_score:40 klout_topic_contains:coffee
+
+```  
+  
+ ```
+  bio:"developer advocate"
+  lang:und (sol OR sun)
+  (lang:es) playa sol
+  #ThinkSnow OR #WinterIsComing
+  profile_region:colorado OR profile_subregion:weld OR profile_locality:Greely
+  "this long phrase is OK"
+  (place_country:US OR profile_country:US) snow
+  bio_name:jim
+  has:profile_geo (shoes OR sandals)
+  place:boulder OR bio_location:boulder
+```  
+  
+ 
+  
+  
+## Example Usage Patterns
+
++ Create a "Rules 2.0 readiness" summary for my PowerTrack 1.0 rules. 
+
+```rule_migrator_app.rb -r``` 
+
+
+
+
++ Translate a set of version 1.0 rules, write them to a local JSON file, and review.
+
+
++ Load a generated JSON file to a 'Target' stream.
+
++ Translate a set of version 1.0 rules straight to a version 2.0 'Target' stream.
+
++ Migrate a set of PowerTrack rules from a 'dev' stream straight to a 'prod' stream.
+
++ I had a client-side network operational problem and want to use Replay to recover data I missed in real-time. 
+ 
+
+
+
+
 
 ### Fundamental Details <a id="fundamental-details" class="tall">&nbsp;</a>
 
@@ -63,17 +132,7 @@ Here are some common user-stories that drove the development of this app:
   + Output Target rules JSON to a local file for review.  
 
 
-## Example Usage Patterns
-
-+ Translate a set of version 1.0 rules, write them to a local JSON file, and review.
-
-+ Load a generated JSON file to a 'Target' stream.
-
-+ Translate a set of version 1.0 rules straight to a version 2.0 'Target' stream.
-
-+ Migrate a set of PowerTrack rules from a 'dev' stream straight to a 'prod' stream.
-
-+ I had a client-side network operational problem and want to use Replay to recover data I missed in real-time.  
+ 
 
 
 ## Getting Started  <a id="getting-started" class="tall">&nbsp;</a>
@@ -171,7 +230,52 @@ rule_migrator_app -l - -t "https://gnip-api.twitter.com/rules/powertrack/account
 
 
 
+Rule Migration Summaries
 
+ 
+ 
+ ```
+ ---------------------
+ Rule Migrator summary
+ 
+ ---------------------
+ Source system:
+ 	Source[:url] = https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/testv1/rules.json
+ 	Source system has 15 rules.
+ 	Source system has 3 rules ready for version 2.
+ 	Source system has 7 rules that were translated to version 2.
+     Source system has 5 rules with version 1.0 syntax not supported in version 2.0.
+     Target system already has 0 rules from Source system.
+ 
+ Target system:
+    	Target[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/jim/publishers/twitter/prod.json
+    	Target system had 0 rules before, and 10 rules after.
+     Number of rules translated: 7
+ 
+ ---------------------
+ 7 Source rules were translated:
+    '(twitter_lang:es OR lang:es) playa sol' ----> '(lang:es) playa sol'
+    'bio_contains:"developer advocate"' ----> 'bio:"developer advocate"'
+    'profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely' ----> 'profile_region:colorado OR profile_subregion:weld OR profile_locality:Greely'
+    '(country_code:US OR profile_country_code:US) snow' ----> '(place_country:US OR profile_country:US) snow'
+    'place_contains:boulder OR bio_location_contains:boulder' ----> 'place:boulder OR bio_location:boulder'
+    'bio_name_contains:jim' ----> 'bio_name:jim'
+    '-has:lang (sol OR sun)' ----> 'lang:und (sol OR sun)'
+ 
+ ---------------------
+ 
+ 
+ ---------------------
+ 5 Source rules contain deprecated Operators with no equivalent in version 2.0:.
+    has:profile_geo_region (snow OR water)
+    bio_lang:es "vamos a la playa"
+    has:profile_geo_subregion (coffee OR tea)
+    klout_score:40 klout_topic_contains:coffee
+    has:profile_geo_locality (motel OR hotel)
+ 
+ 
+ ---------------------
+ ```
 
 
 
