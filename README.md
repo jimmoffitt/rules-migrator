@@ -3,12 +3,13 @@
 + [Introduction](#introduction)
 + [User-stories](#user-stories)
 + [Features](#features)
++ [Migration Example](#example)
 + [1.0 → 2.0 Rule Translations](#translations)
 + [Getting Started](#getting-started)
 
 ## Introduction <a id="introduction" class="tall">&nbsp;</a>
 
-This tool migrates PowerTrack rules from one stream to another. It uses the Rules API to get rules from a **‘Source’** stream, and adds those rules to a **‘Target’** stream. There is also an option to write the JSON payloads to a local file for review, and later loading into the 'Target' system.
+This tool migrates PowerTrack rules from one stream to another. It uses the Rules API to get rules from a **```Source```** stream, and adds those rules to a **```Target```** stream. There is also an option to write the JSON payloads to a local file for review, and later loading into the 'Target' system.
 
 This tool has three main use-cases:
 + Provides feedback on your rule readiness for real-time PowerTrack 2.0.
@@ -47,11 +48,11 @@ Here are some common user-stories that drove the development of this tool:
   Note that this tool does not currently save the batched JSON payloads, and only single complete ruleset files are ever written. (This functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method, where the batched payloads are created in memory.)
   
   
-## An Example of Migrating Rules from 1.0 to 2.0  
+## An Example of Migrating Rules from 1.0 to 2.0 <a id="example" class="tall">&nbsp;</a>  
   
 To help illustrate how to use this tool, we'll migrate an example PowerTrack 1.0 ruleset to 2.0. Our example PT 1.0 ruleset consists of a variety of rules to highlight different tool functionality. These include rules that are already completely compatible with PT 2.0, along with some that contain deprecated Operators, and some that require some sort of translation before adding to 2.0:
    
-  + Rules that are ready for 2.0 (Note: the vast majorityof rules should be in this category) 
+  + Rules that are ready for 2.0 (Note: the vast majority of rules should be in this category) 
     + "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100
     + lang:en (rain OR flood OR storm)
   
@@ -66,26 +67,26 @@ To help illustrate how to use this tool, we'll migrate an example PowerTrack 1.0
     + profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely
   
   + Rules with deprecated Operators (complete list of Operators with *no* replacement are included [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators).
-  + has:profile_geo_region (snow OR water)
-  + has:profile_geo_subregion (coffee OR tea)
-  + has:profile_geo_locality (motel OR hotel)
-  + bio_lang:es "vamos a la playa"
-  + klout_score:40 klout_topic_contains:coffee
+    + has:profile_geo_region (snow OR water)
+    + has:profile_geo_subregion (coffee OR tea)
+    + has:profile_geo_locality (motel OR hotel)
+    + bio_lang:es "vamos a la playa"
+    + klout_score:40 klout_topic_contains:coffee
   
   
-For this example, our version 1.0 ```Source``` rules will be available at the following Rules API 1.0 endpoint:
+For this example, our version 1.0 *```Source```* rules will be available at the following Rules API 1.0 endpoint:
    
-    ```
-    https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json
-   
-    ```
-   
-We'll port these rules to the following Rules API 2.0 ```Target``` endpoint:    
+```
+https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json
 
-    ```
-    https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
-    
-    ```
+```
+   
+We'll port these rules to the following Rules API 2.0 *```Target```* endpoint:    
+
+```
+https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
+
+```
   
 First, let's get some feedback on the readiness of this version 1.0 ruleset for 2.0. When you pass in the ```-r``` command-line option, the tool will run in a 'report' mode. The 'report' mode will not make any changes to your Target ruleset, and will report on how many rules are already ready for 2.0, how many need translations and what the translated rules will look like, and how many can not be migrated to 2.0 due to deprecated Operators with no 2.0 equivalents.  
   
@@ -120,8 +121,7 @@ For our example ruleset, the tool will output the following rule summary:
   	Source system has 7 rules that were translated to version 2.
       Source system has 5 rules with version 1.0 syntax not supported in version 2.0.
       Target system already has 0 rules from Source system.
-  
-  
+ 
   ---------------------
   7 Source rules were translated:
      '(twitter_lang:es OR lang:es) playa sol' ----> '(lang:es) playa sol'
@@ -133,9 +133,6 @@ For our example ruleset, the tool will output the following rule summary:
      '-has:lang (sol OR sun)' ----> 'lang:und (sol OR sun)'
   
   ---------------------
-  
-  
-  ---------------------
   5 Source rules contain deprecated Operators with no equivalent in version 2.0:.
      has:profile_geo_region (snow OR water)
      bio_lang:es "vamos a la playa"
@@ -143,85 +140,53 @@ For our example ruleset, the tool will output the following rule summary:
      klout_score:40 klout_topic_contains:coffee
      has:profile_geo_locality (motel OR hotel)
   
-  
   ---------------------
   
   Finished at 2016-08-11 12:55:42 -0600
   
 ```
 
-Now, let's go ahead and migrate this ruleset to 2.0. 
+Now, let's go ahead and migrate this ruleset to 2.0. To do this we will remove the ```-r``` options, set the ```-w "api"``` option (write to the API, rather than write a JSON file), and provide the Target Rules API 2.0 endpoint:
 
+ ```
+  $ruby rule_migrator_app.rb -w "api" -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json"
+  
+  ```
+  
+  After running that command we now have the following rules assigned to our 2.0 stream:
+  
+  + Rules that migrated with no changes:
+    + "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100
+    + lang:en (rain OR flood OR storm)
+   
+  + Rules that were translated to 2.0
+    + (lang:es OR lang:pt) (nieve OR lluvia OR tiempo OR viento OR tormenta OR granizada)
+    + (lang:es) playa sol
+    + lang:und (sol OR sun)
+    + (place_country:US OR profile_country:US) snow
+    + bio:"developer advocate"
+    + place:boulder OR bio_location:boulder
+    + bio_name:jim
+    + profile_region:colorado OR profile_subregion:weld OR profile_locality:Greely  
+   
+Notice that the five version 1.0 rules containing deprecated Operators could not be migrated to 2.0. 
 
+Note that the Rule Migration tool also supports *writing the 2.0 ruleset to a JSON file*, allowing you to review them before writing them to your 2.0 system. To do this you can change the 'write mode' to 'file' with the ```-w "files"``` command-line option. 
 
+This command will prepare your 2.0 rules, and write them to a 'Source_rules.json' JSON file:
 
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-
+```
+  $ruby rule_migrator_app.rb -w "file" -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" 
   
 ```
-  "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100  
-  lang:en (rain OR flood OR storm)
-  
-  (lang:es OR lang:pt) (nieve OR lluvia OR tiempo OR viento OR tormenta OR granizada)
-  (lang:es) playa sol
-  lang:und (sol OR sun)
-  
-  (place_country:US OR profile_country:US) snow
-  bio:"developer advocate"
-  place:boulder OR bio_location:boulder
-  bio_name:jim
-  profile_region:colorado OR profile_subregion:weld OR profile_locality:Greely  
-  
-```  
-  
-Note that the five version 1.0 rules containing deprecated Operators could not be migrated to 2.0. However, there are likely candidate rules that would act as equivalents:
 
- + has:profile_geo_region (snow OR water)
- + has:profile_geo_subregion (coffee OR tea)
- + has:profile_geo_locality (motel OR hotel)
- + bio_lang:es "vamos a la playa"
- + klout_score:40 klout_topic_contains:coffee
- 
-  
-  
-## Example Usage Patterns
+By default this writes the JSON rules file to a ```./rules``` folder, and automatically creates the folder if needed. Note that you can specify an alternate folder with the ```-d DIRECTORY``` option.
 
-+ Create a "Rules 2.0 readiness" summary for my PowerTrack 1.0 rules. 
+If, after review, this rules file looks ready to migration, you can then have the tool load its rules JSON contents to your Target system:
 
-```rule_migrator_app.rb -r``` 
-
-
-
-
-+ Translate a set of version 1.0 rules, write them to a local JSON file, and review.
-
-
-+ Load a generated JSON file to a 'Target' stream.
-
-+ Translate a set of version 1.0 rules straight to a version 2.0 'Target' stream.
-
-+ Migrate a set of PowerTrack rules from a 'dev' stream straight to a 'prod' stream.
-
-+ I had a client-side network operational problem and want to use Replay to recover data I missed in real-time. 
- 
-
-
-
-
+```
+  $ruby rule_migrator_app.rb -w "api" -f "/Source_rules.json" 
+```
 
 ### Fundamental Details <a id="fundamental-details" class="tall">&nbsp;</a>
 
@@ -238,9 +203,6 @@ Note that the five version 1.0 rules containing deprecated Operators could not b
 + Process can either: 
   + Add rules to the Target system using the Rules API.
   + Output Target rules JSON to a local file for review.  
-
-
- 
 
 
 ## Getting Started  <a id="getting-started" class="tall">&nbsp;</a>
@@ -288,10 +250,10 @@ File name and location defaults to ./config/options.yaml
 
 ```
  source:
-   url: https://api.gnip.com:443/accounts/<ACCOUNT_NAME>/publishers/twitter/streams/track/<LABEL>/rules.json
+   url: https://api.gnip.com:443/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json
 
  target:
-   url: https://gnip-api.twitter.com/rules/powertrack/accounts/<ACCOUNT_NAME>/publishers/twitter/<LABEL>.json
+   url: https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
 
  options:
    write_rules_to: files         #options: files, api
