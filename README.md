@@ -6,6 +6,17 @@
 + [Migration Example](#example)
 + [1.0 → 2.0 Rule Translations](#translations)
 + [Getting Started](#getting-started)
++ [Rule Translations](#translations)
+
+### tl;dr
+
+To port your PowerTrack 1.0 rules to 2.0, run the following command:
+
+```
+$ruby rule_migrator_app.rb -w "api" -s "https://{my 1.0 Rules API 1.0 URL}.json" -t "https://{my Rules API 2.0 URL}.json" 
+
+```
+
 
 ## Introduction <a id="introduction" class="tall">&nbsp;</a>
 
