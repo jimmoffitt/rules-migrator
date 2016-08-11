@@ -28,13 +28,15 @@ This tool has three main use-cases:
 + Clones real-time rules to Replay streams. 
 + Clones rules between real-time streams, such as 'dev' to 'prod' streams.
 
-If you are deploying a new PowerTrack stream, this tool can be use to create your 2.0 ruleset, translating when necessary, and dropping rules when necessary  migrate the rules, then verify your ruleset before connecting to the new stream. 
+If you are deploying a new PowerTrack 2.0 stream, this tool can be use to create your 2.0 ruleset, translating syntax when necessary, dropping rules when necessary, then either writing directly to the Rules API 2.0 endpoint or writing to a file for verification.
  
-Given the high volumes of real-time Twitter data, it is a best practice to review any and all rules  before adding to a live production stream. It is highly recommended that you initially build your ruleset on a non-production stream before moving to a production stream. Most Gnip customers have a development/sandbox stream deployed for their internal testing. If you have never had a 'dev' stream for development and testing, they come highly recommended. If you are migrating to PowerTrack 2.0, you have the option to use the new PowerTrack 2.0 stream as a development stream during the 30-day migration period. 
+Given the potential high volumes of real-time Twitter data, it is a best practice to review any and all rules before adding to a live production stream. It is highly recommended that you initially build your ruleset on a non-production stream before moving to a production stream. Most Gnip customers have a development/sandbox stream deployed for their internal testing. If you have never had a 'dev' stream for development and testing, they come highly recommended. If you are migrating to PowerTrack 2.0, you have the option to use the new PowerTrack 2.0 stream as a development stream during the 30-day migration period. 
+
+After testing your rules on your development stream, you can also use this tool to copy them to your 2.0 production stream.
 
 For more information on migrating PowerTrack rules from one stream to another, see [this Gnip support article](http://support.gnip.com/articles/migrating-powertrack-rules.html).
 
-The rest of this document focuses on the Ruby example app used to migrate rules.
+The rest of this document focuses on the Ruby example app developed to migrate rules.
 
 ## User-stories  <a id="user-stories" class="tall">&nbsp;</a>
 
@@ -47,16 +49,16 @@ Here are some common user-stories that drove the development of this tool:
 
 ## Migration Tool Features  <a id="features" class="tall">&nbsp;</a>
 
-+ When migrating rules from version 1.0 to 2.0, this tool translates rules when possible.
-  + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated, and are instead dropped and logged.  
 + Supports generating a rules report, providing feedback on readiness for PowerTrack 2.0.  
++ When migrating rules from version 1.0 to 2.0, this tool translates rules when possible.
+  + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated. These rules are called out in the 'rule migration summary' output.  
 + Migrates rules tags.
 + Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
 + Provides two 'output' options:
   + Writing write rules JSON to a local file.
   + POSTing rules to the target system using the PowerTrack Rules API.
   
-  Note that this tool does not currently save the batched JSON payloads, and only single complete ruleset files are ever written. (This functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method, where the batched payloads are created in memory.)
+Note that this tool does not currently save the potentially batched JSON payloads, and only single complete ruleset files are ever written. (This functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method, where the batched payloads are created in memory.)
   
   
 ## An Example of Migrating Rules from 1.0 to 2.0 <a id="example" class="tall">&nbsp;</a>  
@@ -99,7 +101,7 @@ https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitte
 
 ```
   
-First, let's get some feedback on the readiness of this version 1.0 ruleset for 2.0. When you pass in the ```-r``` command-line option, the tool will run in a 'report' mode. The 'report' mode will not make any changes to your Target ruleset, and will report on how many rules are already ready for 2.0, how many need translations and what the translated rules will look like, and how many can not be migrated to 2.0 due to deprecated Operators with no 2.0 equivalents.  
+First, let's get some feedback on the readiness of this version 1.0 ruleset for 2.0. When you pass in the ```-r``` command-line option, the tool will run in a 'report' mode. The 'report' mode will not make any changes to your Target ruleset, and will report on how many rules are ready for 2.0, how many need translations and what the translated rules will look like, as well as how many can not be migrated to 2.0 due to deprecated Operators with no 2.0 equivalents.  
   
 To run a rules report on our example Source system, run the tool with the ```-r``` option, along with specifying the Source Rules API endpoint with the ```-s Rules-API_URL``` option:
   
@@ -180,7 +182,7 @@ Now, let's go ahead and migrate this ruleset to 2.0. To do this we will remove t
     + bio_name:jim
     + profile_region:colorado OR profile_subregion:weld OR profile_locality:Greely  
    
-Notice that the five version 1.0 rules containing deprecated Operators could not be migrated to 2.0. 
+Notice that the five version 1.0 rules containing deprecated Operators could not be migrated to 2.0 (and are noted in the 'ruile migration summary'). 
 
 Note that the Rule Migration tool also supports *writing the 2.0 ruleset to a JSON file*, allowing you to review them before writing them to your 2.0 system. To do this you can change the 'write mode' to 'file' with the ```-w "files"``` command-line option. 
 
