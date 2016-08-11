@@ -36,7 +36,7 @@ Here are some common user-stories that drove the development of this tool:
 ## Migration Tool Features  <a id="features" class="tall">&nbsp;</a>
 
 + When migrating rules from version 1.0 to 2.0, this tool translates rules when possible.
-  + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated, and are instead logged.  
+  + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated, and are instead dropped and logged.  
 + Supports generating a rules report, providing feedback on readiness for PowerTrack 2.0.  
 + Migrates rules tags.
 + Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
@@ -44,34 +44,133 @@ Here are some common user-stories that drove the development of this tool:
   + Writing write rules JSON to a local file.
   + POSTing rules to the target system using the PowerTrack Rules API.
   
-  Note that this tool does not currently save the batched JSON payloads, and only single complete ruleset files are ever written. (This functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method.)
+  Note that this tool does not currently save the batched JSON payloads, and only single complete ruleset files are ever written. (This functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method, where the batched payloads are created in memory.)
   
-## Example PowerTrack 1.0 Ruleset
+  
+## An Example of Migrating Rules from 1.0 to 2.0  
+  
+To help illustrate how to use this tool, we'll migrate an example PowerTrack 1.0 ruleset to 2.0. Our example PT 1.0 ruleset consists of a variety of rules to highlight different tool functionality. These include rules that are already completely compatible with PT 2.0, along with some that contain deprecated Operators, and some that require some sort of translation before adding to 2.0:
+   
+  + Rules that are ready for 2.0 (Note: the vast majorityof rules should be in this category) 
+    + "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100
+    + lang:en (rain OR flood OR storm)
+  
+  + Rules that require translation to 2.0
+    + (twitter_lang:es OR twitter_lang:pt) (nieve OR lluvia OR tiempo OR viento OR tormenta OR granizada)
+    + (twitter_lang:es OR lang:es) playa sol
+    + -has:lang (sol OR sun)
+    + (country_code:US OR profile_country_code:US) snow
+    + bio_contains:"developer advocate"
+    + place_contains:boulder OR bio_location_contains:boulder
+    + bio_name_contains:jim
+    + profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely
+  
+  + Rules with deprecated Operators (complete list of Operators with *no* replacement are included [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators).
+  + has:profile_geo_region (snow OR water)
+  + has:profile_geo_subregion (coffee OR tea)
+  + has:profile_geo_locality (motel OR hotel)
+  + bio_lang:es "vamos a la playa"
+  + klout_score:40 klout_topic_contains:coffee
+  
+  
+For this example, our version 1.0 ```Source``` rules will be available at the following Rules API 1.0 endpoint:
+   
+    ```
+    https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json
+   
+    ```
+   
+We'll port these rules to the following Rules API 2.0 ```Target``` endpoint:    
 
-Our example PT 1.0 ruleset consists of a variety of rules that illustrate how the Migration tool works. These include rules that are already completely compatiable with PT 2.0, along with some that contain deprecated Operators, and some that require some sort of translation before adding to 2.0. Note that the vast majority of PowerTrack 1.0 rules will be ready for 2.0 with any changes.
+    ```
+    https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
+    
+    ```
+  
+First, let's get some feedback on the readiness of this version 1.0 ruleset for 2.0. When you pass in the ```-r``` command-line option, the tool will run in a 'report' mode. The 'report' mode will not make any changes to your Target ruleset, and will report on how many rules are already ready for 2.0, how many need translations and what the translated rules will look like, and how many can not be migrated to 2.0 due to deprecated Operators with no 2.0 equivalents.  
+  
+To run a rules report on our example Source system, run the tool with the ```-r``` option, along with specifying the Source Rules API endpoint with the ```-s Rules-API_URL``` option:
+  
+  ```
+  $ruby rule_migrator_app.rb -r -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json"
+  
+  ```
+  
+For our example ruleset, the tool will output the following rule summary:  
+   
+```
+  Starting process at 2016-08-11 12:55:40 -0600
+  Getting rules from Source system. Making Request to Rules API...
+      ... got 15 rules from Source system.
+  
+   ******************
+  Checking 15 rules for translation...
+  Processed 10 rules...
+  
+  Running in 'report' mode, no changes will be made.
+  
+  ---------------------
+  Rule Migrator summary
+  
+  ---------------------
+  Source system:
+  	Source[:url] = https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/testv1/rules.json
+  	Source system has 15 rules.
+  	Source system has 3 rules ready for version 2.
+  	Source system has 7 rules that were translated to version 2.
+      Source system has 5 rules with version 1.0 syntax not supported in version 2.0.
+      Target system already has 0 rules from Source system.
   
   
-```  
+  ---------------------
+  7 Source rules were translated:
+     '(twitter_lang:es OR lang:es) playa sol' ----> '(lang:es) playa sol'
+     'bio_contains:"developer advocate"' ----> 'bio:"developer advocate"'
+     'profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely' ----> 'profile_region:colorado OR profile_subregion:weld OR profile_locality:Greely'
+     '(country_code:US OR profile_country_code:US) snow' ----> '(place_country:US OR profile_country:US) snow'
+     'place_contains:boulder OR bio_location_contains:boulder' ----> 'place:boulder OR bio_location:boulder'
+     'bio_name_contains:jim' ----> 'bio_name:jim'
+     '-has:lang (sol OR sun)' ----> 'lang:und (sol OR sun)'
   
-  "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100
-  lang:en (rain OR flood OR storm)
+  ---------------------
   
-  (twitter_lang:es OR twitter_lang:pt) (nieve OR lluvia OR tiempo OR viento OR tormenta OR granizada)
-  (twitter_lang:es OR lang:es) playa sol
-  -has:lang (sol OR sun)
-  (country_code:US OR profile_country_code:US) snow
-  bio_contains:"developer advocate"
-  place_contains:boulder OR bio_location_contains:boulder
-  bio_name_contains:jim
-  profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely
   
-  has:profile_geo_region (snow OR water)
-  has:profile_geo_subregion (coffee OR tea)
-  has:profile_geo_locality (motel OR hotel)
-  bio_lang:es "vamos a la playa"
-  klout_score:40 klout_topic_contains:coffee
+  ---------------------
+  5 Source rules contain deprecated Operators with no equivalent in version 2.0:.
+     has:profile_geo_region (snow OR water)
+     bio_lang:es "vamos a la playa"
+     has:profile_geo_subregion (coffee OR tea)
+     klout_score:40 klout_topic_contains:coffee
+     has:profile_geo_locality (motel OR hotel)
+  
+  
+  ---------------------
+  
+  Finished at 2016-08-11 12:55:42 -0600
+  
+```
 
-```  
+Now, let's go ahead and migrate this ruleset to 2.0. 
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
   
 ```
   "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100  
