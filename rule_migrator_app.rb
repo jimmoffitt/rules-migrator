@@ -18,19 +18,16 @@ def parseOptions(o)
    cmd_line_params['target'] = nil
    o.on('-t TARGET', '--target', "Rules API URL for POSTing rules to 'Target' system.") { |target| cmd_line_params['target'] = target }
 
-   #TODO: These are new or changes.
    cmd_line_params['report'] = nil
    o.on('-r', '--report', "Just generate rule migration report, do not make any updates.'") { |report| cmd_line_params['report'] = report }
    cmd_line_params['directory'] = nil
    o.on('-d DIRECTORY', '--directory', "Specify directory/folder for storing rule set JSON files. Default is './rules'.") { |directory| cmd_line_params['directory'] = directory }
 
-   #TODO: this needs design attention. Sets 'mode' setting, indicating whether to write 'file', or straight to Target Rules API?  
    cmd_line_params['write_mode'] = nil
-   o.on('-w WRITE', '--write', "Write rules to either JSON file or POST to Target Rules API. Choices: \"files\" or \"api\".") { |write| cmd_line_params['write_mode'] = write }
+   o.on('-w WRITE', '--write', "Write rules to either JSON file or POST to Target Rules API. Choices: \"file\" or \"api\".") { |write| cmd_line_params['write_mode'] = write }
 
-   #TODO: this needs design attention too.
    cmd_line_params['file'] = nil
-   o.on('-f FILE', '--file', "Specify a file or folder to load into 'Target' system. If a single file is provided, it is loaded. If a folder is specified, all files in that folder are loaded.") { |file| cmd_line_params['file'] = file }
+   o.on('-f FILE', '--file', "Specify a file to load into 'Target' system.") { |file| cmd_line_params['file'] = file }
 
    cmd_line_params['verbose'] = nil
    o.on('-v', '--verbose', 'When verbose, output all kinds of things, each request, most responses, etc.') { |verbose| $verbose = verbose }
@@ -48,10 +45,10 @@ def set_defaults cmd_line_params
    #No defaults for Source, Target, File.
 
    #If not passed in, use some defaults.
-   cmd_line_params['account'] = '../config/account.yaml' if cmd_line_params['account'].nil?
-   cmd_line_params['options'] = '../config/options.yaml' if cmd_line_params['options'].nil?
+   cmd_line_params['account'] = './config/account.yaml' if cmd_line_params['account'].nil?
+   cmd_line_params['options'] = './config/options.yaml' if cmd_line_params['options'].nil?
    cmd_line_params['verbose'] = true if cmd_line_params['verbose'].nil?
-   cmd_line_params['write_mode'] = 'files' if cmd_line_params['write_mode'].nil?
+   cmd_line_params['write_mode'] = 'file' if cmd_line_params['write_mode'].nil?
    cmd_line_params['directory'] = "./rules" if cmd_line_params['directory'].nil?
 
    cmd_line_params
@@ -83,8 +80,8 @@ if __FILE__ == $0 #This script code is executed when running this file.
    Migrator.options[:rules_json_to_post] = cmd_line_params['file'] if !cmd_line_params['file'].nil?
    Migrator.options[:verbose] = cmd_line_params['verbose'] if !cmd_line_params['verbose'].nil?
    
-   #If both :rules_json_to_post and :write_mode == files are specified, default to writing JSON.
-   if not Migrator.options[:rules_json_to_post].nil? and Migrator.options[:write_mode] == 'files'
+   #If both :rules_json_to_post and :write_mode == file are specified, default to writing JSON.
+   if not (Migrator.options[:rules_json_to_post].to_s == '') and Migrator.options[:write_mode] == 'file'
 	  Migrator.options[:rules_json_to_post] == nil
 	  AppLogger.log_info "Config says to both POST file to Rules API and write Source rules to file. Only writing JSON file."
 	  AppLogger.log_info "Unset 'write_mode' (-w command-line option) if you want to POST file to Rules API."

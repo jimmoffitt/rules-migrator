@@ -57,7 +57,7 @@ class RuleTranslator
 		 language_codes << code.downcase
 	  end
 
-	  AppLogger.log_debug "Rule #{rule} has #{language_codes.uniq.count} unique language codes: #{language_codes.uniq.to_s}"
+	  #AppLogger.log_debug "Rule #{rule} has #{language_codes.uniq.count} unique language codes: #{language_codes.uniq.to_s}"
 
 	  if language_codes.uniq.count == 1
 		 true
@@ -84,7 +84,7 @@ class RuleTranslator
 	  #AppLogger.log_info "Rule (before): #{rule}"
 
 	  if rule_has_pattern?(rule, pattern)
-		 AppLogger.log_debug "Has #{pattern}"
+		 #AppLogger.log_debug "Has #{pattern}"
 
 		 if only_one_language?(rule)
 			code = get_language_codes_unique rule
@@ -144,7 +144,7 @@ class RuleTranslator
 
 		 if rule.scan("lang:#{language}").count > 1
 
-			AppLogger.log_debug "Have double #{language}"
+			#AppLogger.log_debug "Have double #{language}"
 
 			rule = handle_common_duplicate_patterns rule, language
 		 end
@@ -187,7 +187,7 @@ class RuleTranslator
 	  #OK, we have a mix of lang Operators
 	  #Shortcut is to replace the twitter_lang: clauses with lang:.
 	  #The longer answer is to eliminate twitter_langs in ORs and ANDs and clean up.
-	  AppLogger.log_debug "Have mix of lang and twitter_lang Operators..."
+	  #AppLogger.log_debug "Have mix of lang and twitter_lang Operators..."
 	  #AppLogger.log_debug "Language rule (before): #{rule}"
 
 	  rule = handle_common_lang_patterns rule

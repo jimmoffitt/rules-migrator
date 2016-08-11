@@ -24,7 +24,7 @@ class RulesMigrator
 				 :target,
 				 :target_version,
 				 :credentials,
-				 :options, #hash of options such as :write_mode, :rules_folder, :load_files
+				 :options, #hash of options such as :write_mode, :rules_folder
 				 :do_rule_translation,
 				 :report_only, #boolean
 
@@ -44,10 +44,9 @@ class RulesMigrator
 	  @target = {:url => '', :rules_json => [], :num_rules_before => 0, :num_rules_after => 0, :name => 'Target'}
 	  @credentials = {:user_name => '', :password => ''}
 	  @options = {:verbose => true, 
-				  :write_mode => 'files', 
+				  :write_mode => 'file',
 				  :rules_folder => './rules', 
 				  :rules_json_to_post => nil,
-				  :load_files => false,
 				  :report_only => true
 	  }
 
@@ -245,7 +244,7 @@ class RulesMigrator
 		 #Remove any rules with deprecated Operator.
 		 if @rules_translator.rule_has_deprecated_operator? rule
 			@rules_deprecated << rule
-			puts "Skipping deprecated rule"
+			#puts "Skipping deprecated rule"
 			next
 		 end
 
@@ -363,7 +362,7 @@ class RulesMigrator
 
 	  requests.each do |request|
 
-		 if @options[:write_mode] == 'files' and @options[:rules_json_to_post].nil?
+		 if @options[:write_mode] == 'file' and (@options[:rules_json_to_post].to_s == '')
 			AppLogger.log_info "Writing rules to a JSON file."
 			make_rules_file request
 		 else # writing to 'api', so POST the requests.
@@ -461,7 +460,7 @@ class RulesMigrator
 
 	  requests.each do |request|
 
-		 if @options[:write_mode] == 'files' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
+		 if @options[:write_mode] == 'file' #  and not @options['write_to_file'].nil? #TODO: needed? huh?
 
 			make_rules_file request
 
@@ -571,6 +570,13 @@ class RulesMigrator
 
    def write_summary
 	  #Number of rules for source and target (before and after).
+	  
+	  if @report_only
+	  	puts ''
+	  	puts "Running in 'report' mode, no changes will be made."
+		puts ''
+   	  end
+
 	  puts '---------------------'
 	  puts "Rule Migrator summary"
 
@@ -587,6 +593,7 @@ class RulesMigrator
 	  puts ''
 	  
 	  if not @report_only
+	
 		 puts 'Target system:'
 		 puts "   	Target[:url] = #{@target[:url]}"
 		 puts "   	Target system had #{@target[:num_rules_before]} rules before, and #{@target[:num_rules_after]} rules after."
@@ -630,7 +637,7 @@ class RulesMigrator
 	  puts ''
 	  #Rules that already existed.
 	  puts '---------------------'
-	  if @rules_already_exist.count > 0
+	  if not @report_only and @rules_already_exist.count > 0
 
 	  	 puts "#{@rules_already_exist.count} Source rules already exist in Target system."
 	  	 @rules_already_exist.each do |rule|

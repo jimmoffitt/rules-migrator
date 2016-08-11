@@ -132,8 +132,8 @@ For our example ruleset, the tool will output the following rule summary:
   	Source system has 15 rules.
   	Source system has 3 rules ready for version 2.
   	Source system has 7 rules that were translated to version 2.
-      Source system has 5 rules with version 1.0 syntax not supported in version 2.0.
-      Target system already has 0 rules from Source system.
+    Source system has 5 rules with version 1.0 syntax not supported in version 2.0.
+    Target system already has 0 rules from Source system.
  
   ---------------------
   7 Source rules were translated:
