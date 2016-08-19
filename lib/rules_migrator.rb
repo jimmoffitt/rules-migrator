@@ -90,7 +90,12 @@ class RulesMigrator
 	  end
 
 	  begin #Now parse contents and load separate attributes.
-		 @source[:url] = options['source']['url'] #Load Source details.
+
+		 begin
+		 	@source[:url] = options['source']['url'] #Load Source details.
+		 rescue
+			@source[:url] = nil
+		 end
 		 begin
 			@target[:url] = options['target']['url']
 		 rescue
@@ -118,10 +123,14 @@ class RulesMigrator
 
 	  continue = true
 
-	  if source_url.include? 'api.gnip.com'
-		 @source_version = 1
+	  if !source_url.nil?
+		 if source_url.include? 'api.gnip.com'
+			@source_version = 1
+		 else
+			@source_version = 2
+		 end
 	  else
-		 @source_version = 2
+		 @source_version = 1 #Note: if no source specified, we are assuming this is a '1.0 readiness report'.
 	  end
 
 	  if !target_url.nil?
@@ -588,7 +597,8 @@ class RulesMigrator
 	  puts "	Source system has #{@rules_ok.count} rules ready for version 2."
 	  puts "	Source system has #{@rules_translated.count} rules that were translated to version 2."
 	  puts "    Source system has #{@rules_deprecated.count} rules with version 1.0 syntax not supported in version 2.0."
-	  puts "    Target system already has #{@rules_already_exist.count} rules from Source system."
+	  
+	  puts "    Target system already has #{@rules_already_exist.count} rules from Source system." unless @report_only
 	  
 	  puts ''
 	  
