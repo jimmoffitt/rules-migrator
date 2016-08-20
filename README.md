@@ -13,10 +13,26 @@
 To port your PowerTrack 1.0 rules to 2.0, run the following command:
 
 ```
-$ruby rule_migrator_app.rb -w "api" -s "https://{my 1.0 Rules API 1.0 URL}.json" -t "https://{my Rules API 2.0 URL}.json" 
+$ruby rule_migrator_app.rb -w "api" -s "{my 1.0 Rules API 1.0 URL}" -t "{my Rules API 2.0 URL}" 
 
 ```
 
+And see a report like this:
+
+```
+Source system:
+ 	Source[:url] = https://api.gnip.com:443/accounts/snowman/publishers/twitter/streams/track/prod/rules.json
+ 	Source system has 37576 rules.
+ 	Source system has 35654 rules ready for version 2.
+ 	Source system has 1907 rules that were translated to version 2.
+  Source system has 15 rules with version 1.0 syntax not supported in version 2.0.
+  Target system already had 0 rules from Source system.
+ 
+ Target system:
+    	Target[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
+    	Target system had 0 rules before, and 37561 rules after.
+     Number of rules translated: 1907
+ ```
 
 ## Introduction <a id="introduction" class="tall">&nbsp;</a>
 
@@ -323,15 +339,15 @@ Rule Migration Summaries
  
  ---------------------
  Source system:
- 	Source[:url] = https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/testv1/rules.json
+ 	Source[:url] = https://api.gnip.com:443/accounts/snowman/publishers/twitter/streams/track/testv1/rules.json
  	Source system has 15 rules.
  	Source system has 3 rules ready for version 2.
  	Source system has 7 rules that were translated to version 2.
-     Source system has 5 rules with version 1.0 syntax not supported in version 2.0.
-     Target system already has 0 rules from Source system.
+  Source system has 5 rules with version 1.0 syntax not supported in version 2.0.
+  Target system already had 0 rules from Source system.
  
  Target system:
-    	Target[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/jim/publishers/twitter/prod.json
+    	Target[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
     	Target system had 0 rules before, and 10 rules after.
      Number of rules translated: 7
  
