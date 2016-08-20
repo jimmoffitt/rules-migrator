@@ -149,12 +149,11 @@ if __FILE__ == $0 #This script code is executed when running this file.
    end
 
    #*******************
-   #If not just reporting, POST the rules. 	
+   
    if not Migrator.report_only #translated rules ready to post
 
-	  #Migrate (Source) rules to Target system.
-	  continue = Migrator.post_rules(Migrator.target)
-
+   	  continue = Migrator.post_rules(Migrator.target)
+   
 	  if continue #If migration successful, recheck Target rules. 	 
 		 Migrator.target[:rules_json] = Migrator.GET_rules(Migrator.target, false)
 		 AppLogger.log_error "ERROR re-checking target rules." if Migrator.target[:rules_json].nil?
@@ -163,6 +162,8 @@ if __FILE__ == $0 #This script code is executed when running this file.
 		 AppLogger.log_error "POSTing rules to TARGET system. Quitting"
 		 abort
 	  end
+   else
+	  continue = Migrator.post_rules_to_validator(Migrator.target)
    end
 
    Migrator.write_summary

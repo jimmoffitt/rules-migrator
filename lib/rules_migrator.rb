@@ -379,6 +379,7 @@ class RulesMigrator
 			begin
 
 			   AppLogger.log_info "Posting rules to #{target[:name]} Rules API."
+			   
 
 			   response = @http.POST(target[:url], request, {"content-type" => "application/json", "accept" => "application/json"})
 			   #response_json = response.body.to_json
@@ -387,7 +388,7 @@ class RulesMigrator
 			   AppLogger.log_debug "response code: #{response.code} | message: #{response.message} "
 
 			   if response.code == '200' or response.code == '201'
-				  AppLogger.log_info "Successful rule post to target system."
+				  AppLogger.log_info "Successful rule post to target system." 
 
 				  #Although we have a 201, it is possible some were not created since they already exist.
 				  AppLogger.log_info "#{response_hash['summary']['created']} rules were created."
@@ -458,6 +459,82 @@ class RulesMigrator
 	  true
    end
 
+   #When running in 'report' mode, we go here and hit the rule validation endpoint.
+   def post_rules_to_validator(target)
+
+	  return false if target[:name].downcase == 'source'
+
+	  #return nil if url includes? source
+	  requests = create_post_requests(target[:rules_json])
+
+	  requests.each do |request|
+
+			begin
+
+			   AppLogger.log_info "Posting rules to #{target[:name]} Rule Validation endpoint."
+
+			   target[:url] = target[:url].split('.json').first + '/validation.json'
+
+
+			   response = @http.POST(target[:url], request, {"content-type" => "application/json", "accept" => "application/json"})
+			   #response_json = response.body.to_json
+			   response_hash = JSON.parse(response.body)
+
+			   AppLogger.log_debug "response code: #{response.code} | message: #{response.message} "
+
+			   if response.code == '200' or response.code == '201'
+				  AppLogger.log_info "Rules were successfully posted to rule validation endpoint."
+
+				  #Although we have a 201, it is possible some were not created since they already exist.
+				  AppLogger.log_info "#{response_hash['summary']['valid']} rules were valid."
+
+				  if response_hash['summary']['not_valid'] > 0
+					 AppLogger.log_debug "#{response_hash['summary']['not_valid']} rules were NOT valid."
+
+					 response_hash['detail'].each do |detail|
+						if detail['valid'] == false
+						   AppLogger.log_debug "Rule '#{detail['rule']['value']}' was not valid because: #{detail['message']}"
+						   @rules_invalid << detail['rule']['value']
+						end
+					 end
+				  end
+
+			   else
+
+				  if response_hash['summary'].nil? #This is something the non-Rules API/syntax error.
+					 AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
+				  else #Request was processed, but probably at least one rule was invalid w.r.t. to PT 2.0.
+
+					 #Idea here is to drop the bad rules, and retry, logging the bad rules....
+
+					 AppLogger.log_info "No rules were valid. Here are the offending rules:"
+
+					 response_hash['detail'].each do |detail|
+						if detail['valid'] == false and not detail['message'].nil?
+						   AppLogger.log_info "Rule '#{detail['rule']['value']}' was not valid because: #{detail['message']}"
+
+						   #if detail['message'] about new 2.0 syntax validator.
+						   @rules_invalid << detail['rule']['value']
+
+						elsif detail['valid'] == false and detail['message'].nil?
+						   #AppLogger.log_debug "Rule '#{detail['rule']['value']}' is version 2.0 ready, but blocked."
+						   #@rules_valid_but_blocked << detail['rule']
+						end
+					 end
+
+			  	  end
+			   end
+			rescue
+			   sleep 5
+			   response = @http.POST(target[:url], request) #try again
+			end
+
+	  end
+
+	  true
+   end
+   
+   
    def delete_rules(target)
 
 	  return false if target[:name].downcase == 'source'
@@ -496,7 +573,7 @@ class RulesMigrator
 
 				  #"{"summary":{"created":8,"not_created":5},"detail":[{"rule":{"value":"(lang:en OR lang:en OR lang:und) Gnip","tag":null,"id":710911249710653441},"created":true},{"rule":{"value":"(place:minneapolis OR bio:minnesota) (snow OR rain)","tag":null,"id":710911249735811073},"created":true},{"rule":{"value":"-lang:und (snow OR rain)","tag":null,"id":710911249735753728},"created":true},{"rule":{"value":"(lang:en) place_country_code:us bio:Twitter","tag":null,"id":710911249706409985},"created":true},{"rule":{"value":"(lang:en OR lang:und OR lang:en) Gnip","tag":null,"id":710911249735749632},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null,"id":710911249702191104},"created":true},{"rule":{"value":"lang:en Gnip","tag":null,"id":710911249735757825},"created":true},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null,"id":710911249706422273},"created":true},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"lang:en Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:es OR lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"},{"rule":{"value":"(lang:en) Gnip","tag":null},"created":false,"message":"A rule with this value already exists"}]}"
 
-			   else #TODO: handle errors.
+			   else
 
 				  if response_hash['summary'].nil? #This is something the non-Rules API/syntax error.
 					 AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
@@ -594,9 +671,10 @@ class RulesMigrator
 	  puts 'Source system:'
 	  puts "	Source[:url] = #{@source[:url]}"
 	  puts "	Source system has #{@source[:num_rules_before]} rules."
-	  puts "	Source system has #{@rules_ok.count} rules ready for version 2."
+	  puts "	Source system has #{@rules_ok.count - @rules_invalid.count - @rules_deprecated.count} rules ready for version 2."
 	  puts "	Source system has #{@rules_translated.count} rules that were translated to version 2."
-	  puts "    Source system has #{@rules_deprecated.count} rules with version 1.0 syntax not supported in version 2.0."
+	  puts "	Source system has #{@rules_deprecated.count} rules that contain deprecated Operators with no equivalent in version 2.0."
+	  puts "    Source system has #{@rules_invalid.count} rules with version 1.0 syntax not supported in version 2.0."
 	  
 	  puts "    Target system already has #{@rules_already_exist.count} rules from Source system." unless @report_only
 	  
@@ -614,7 +692,7 @@ class RulesMigrator
 	  puts '---------------------'
 	  if @rules_translated.count > 0
 
-		 puts "#{rules_translated.count} Source rules were translated:"
+		 puts "#{@rules_translated.count} Source rules were translated:"
 		 @rules_translated.each do |rule|
 			puts "   #{rule}"
 		 end
@@ -625,7 +703,7 @@ class RulesMigrator
 	  puts '---------------------'
 	  if @rules_invalid.count > 0
 
-		 puts "#{rules_invalid.count} Source rules that have version 1.0 syntax not supported in version 2.0:"
+		 puts "#{@rules_invalid.count} Source rules that have version 1.0 syntax not supported in version 2.0:"
 		 @rules_invalid.each do |rule|
 			puts "   #{rule}"
 		 end
@@ -649,7 +727,7 @@ class RulesMigrator
 	  puts '---------------------'
 	  if not @report_only and @rules_already_exist.count > 0
 
-	  	 puts "#{@rules_already_exist.count} Source rules already exist in Target system."
+	  	 puts "#{@rules_already_exist.count} Source rules already exist in Target system:"
 	  	 @rules_already_exist.each do |rule|
 	  		puts "   #{rule['value']}"
 	  	 end
