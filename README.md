@@ -4,8 +4,8 @@
 + [User-stories](#user-stories)
 + [Features](#features)
 + [Migration Example](#example)
-+ [1.0 → 2.0 Rule Translations](#translations)
 + [Getting Started](#getting-started)
++ [1.0 → 2.0 Rule Translations](#translations)
 + [Rule Translations](#translations)
 
 ### tl;dr
@@ -25,13 +25,13 @@ Source system:
  	Source system has 37576 rules.
  	Source system has 35654 rules ready for version 2.
  	Source system has 1907 rules that were translated to version 2.
-  Source system has 15 rules with version 1.0 syntax not supported in version 2.0.
-  Target system already had 0 rules from Source system.
+    Source system has 15 rules with version 1.0 syntax not supported in version 2.0.
+    Target system already had 0 rules from Source system.
  
  Target system:
-    	Target[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
-    	Target system had 0 rules before, and 37561 rules after.
-     Number of rules translated: 1907
+    Target[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
+    Target system had 0 rules before, and 37561 rules after.
+    Number of rules translated: 1907
  ```
 
 ## Introduction <a id="introduction" class="tall">&nbsp;</a>
