@@ -443,6 +443,23 @@ class RulesMigrator
 						response = @http.POST(target[:url], request)
 						if response.code == '200' or response.code == '201'
 						   AppLogger.log_info "Retry succeeded."
+						   response_hash = JSON.parse(response.body)
+
+						   if response_hash['summary']['not_created'] > 0
+							  AppLogger.log_debug "#{response_hash['summary']['not_created']} rules were NOT created."
+
+							  response_hash['detail'].each do |detail|
+								 if detail['created'] == false
+									AppLogger.log_debug "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
+
+									if detail['message'].include?("rule with this value already exists")
+									   @rules_already_exist << detail['rule']['value']
+									end
+								 end
+							  end
+						   end
+
+
 						else
 						   AppLogger.log_error "Retry failed. "
 						end
@@ -671,7 +688,7 @@ class RulesMigrator
 	  puts 'Source system:'
 	  puts "	Source[:url] = #{@source[:url]}"
 	  puts "	Source system has #{@source[:num_rules_before]} rules."
-	  puts "	Source system has #{@rules_ok.count - @rules_invalid.count - @rules_deprecated.count} rules ready for version 2."
+	  puts "	Source system has #{@rules_ok.count - @rules_invalid.count} rules ready for version 2."
 	  puts "	Source system has #{@rules_translated.count} rules that were translated to version 2."
 	  puts "	Source system has #{@rules_deprecated.count} rules that contain deprecated Operators with no equivalent in version 2.0."
 	  puts "    Source system has #{@rules_invalid.count} rules with version 1.0 syntax not supported in version 2.0."
@@ -689,9 +706,8 @@ class RulesMigrator
       end
 	  puts ''
 	  #Note any rules that needed to be 'translated'.
-	  puts '---------------------'
 	  if @rules_translated.count > 0
-
+		 puts '---------------------'
 		 puts "#{@rules_translated.count} Source rules were translated:"
 		 @rules_translated.each do |rule|
 			puts "   #{rule}"
@@ -700,9 +716,9 @@ class RulesMigrator
 
 	  puts ''
 	  #Rules that could not be added to version 2.0
-	  puts '---------------------'
-	  if @rules_invalid.count > 0
 
+	  if @rules_invalid.count > 0
+		 puts '---------------------'
 		 puts "#{@rules_invalid.count} Source rules that have version 1.0 syntax not supported in version 2.0:"
 		 @rules_invalid.each do |rule|
 			puts "   #{rule}"
@@ -724,12 +740,12 @@ class RulesMigrator
 
 	  puts ''
 	  #Rules that already existed.
-	  puts '---------------------'
-	  if not @report_only and @rules_already_exist.count > 0
 
+	  if not @report_only and @rules_already_exist.count > 0
+		 puts '---------------------'
 	  	 puts "#{@rules_already_exist.count} Source rules already exist in Target system:"
 	  	 @rules_already_exist.each do |rule|
-	  		puts "   #{rule['value']}"
+	  		puts "   #{rule}"
 	  	 end
 	  end
 	  puts ''
