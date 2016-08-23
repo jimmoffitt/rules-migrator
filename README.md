@@ -5,7 +5,7 @@
 + [Features](#features)
 + [Migration Example](#example)
 + [Getting Started](#getting-started)
-+ [1.0 → 2.0 Rule Translations](#translations)
++ [More Examples](#more-examples)
 + [Rule Translations](#translations)
 
 ### tl;dr
@@ -38,8 +38,8 @@ Source system:
 
 This tool migrates PowerTrack rules from one stream to another. It uses the Rules API to get rules from a **```Source```** stream, and adds those rules to a **```Target```** stream. There is also an option to write the JSON payloads to a local file for review, and later loading into the 'Target' system.
 
-This tool has three main use-cases:
-+ Provides feedback on your rule readiness for real-time PowerTrack 2.0.
+This tool has four main use-cases:
++ Provides feedback on your version 1.0 ruleset readiness for real-time PowerTrack 2.0.
 + Clones PowerTrack version 1.0 (PT 1.0) rules to PowerTrack version 2.0 (PT 2.0).
 + Clones real-time rules to Replay streams. 
 + Clones rules between real-time streams, such as 'dev' to 'prod' streams.
@@ -302,7 +302,6 @@ File name and location defaults to ./config/options.yaml
 
 #### Command-line Options <a id="command-line-options" class="tall">&nbsp;</a>
 
-
 ```
 Usage: rule_migrator_app [options]
     -a, --account ACCOUNT            Account configuration file (including path) that provides Gnip account details.
@@ -317,11 +316,38 @@ Usage: rule_migrator_app [options]
     -h, --help                       Display this screen.
 ```
 
+## More Examples <a id="more-examples" class="tall">&nbsp;</a>
+
+For the example use-cases listed above, here are some more examples of how to perform these rule migrations. For all these examples we are assuming that the Gnip account details are in a ```config``` subfolder and in a file called ```accounts.yaml``` (the default location and name). Remember you can specific any path and filename with the ```-a``` command-line option, as in ```$ruby rule_migrator_app.rb -a "./configurations/private_account_details.yaml```. Also, for these examples, you would replace the ```{ACCOUNT_NAME}``` token with your Gnip account name (which is case sensitive), and the ```{STREAM_LABEL}``` with the appropriate stream label (these can be set to anything, but are commonly set to 'prod' or 'dev').
+
++ As a real-time PowerTrack 1.0 customer, I want to know what shape my ruleset is in w.r.t. Gnip 2.0.
+
+```
+$ruby rule_migrator_app.rb -r -s "https://api.gnip.com:443/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"
+```
+
++ Before I write my rules to my ```Target``` system via the Rules API 2.0, I want to write out a JSON file containing the candidate rules (including 2.0 translations) for review. Note that by default, the tool will write to a ```./rules``` subfolder by default. You can specify a different folder with the ```-d``` (directory) command-line option, or by setting the ```rules_folder``` setting in the ```options.yaml``` file.
+
+```
+$ruby rule_migrator_app.rb -w 'file' -s "https://api.gnip.com:443/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json" 
+```
++ After review, I want to write the rules in that file to my ```Target``` system via the Rules API.
+ 
++ Next, I want to go straight from my ```Source``` 1.0 system to my ```Target``` 2.0 system.
+
++ As a real-time PowerTrack (1.0 or 2.0) customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
+
++ As a Replay customer, I want to clone my real-time rules to my Replay stream.
+
+
+
 ## 1.0 → 2.0 Rule Translations  <a id="translations" class="tall">&nbsp;</a>
 
 There are many PowerTrack Operator changes with 2.0. New Operators have been introduced, some have been deprecated, and some have had a grammar/name update. See [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html) and [HERE](http://support.gnip.com/articles/rules-migrator.html) for more details.
 
 When migrating 1.0 rules to 2.0, this application attempts to translate when it can, although there will be cases when the automatic translation will not be performed. For example, no version 1.0 rule which includes a deprecated Operator will be translated. In all cases, the rules that can and can not be translated are logged. 
+
+All rule translations are encapsualated in [THIS CLASS](https://github.com/jimmoffitt/rules-migrator/blob/master/lib/rules/rule_translator.rb).
 
 ### Operator Replacements  
     
