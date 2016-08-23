@@ -7,7 +7,7 @@ target: #Target stream for rules.
 options:
   write_mode: file           #Options: file, api
   rules_folder: ./rules       #If generating rule JSON files, where to write them. Also source for JSON payloads to POST.
-  rules_json_to_post: ''      #Either a single file (path and name) or a rules folder. If either, load those into Target system.
+  rules_json_to_post: ''      #JSON file (path and name) to load into Target system via Rules API.
   verbose: false              #When true, the app writes more to system out.
   
 logging:
