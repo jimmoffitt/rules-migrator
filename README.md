@@ -249,6 +249,8 @@ If, after review, this rules file looks ready to migration, you can then have th
 
 ## Getting Started  <a id="getting-started" class="tall">&nbsp;</a>
 
+The Rule Migrator tool is written in Ruby. It is based on Ruby 2.0, and uses very vanilla gems. If you are on Linux or MacOS, it should work out-of-the-box with the Ruby environment you already have (subject to running bundler with the supplied Gem file). This code has not been tested on Windows, but it should work assuming you have a Ruby 2.0 environment installed. 
+
 + Get some Gnip PowerTrack streams and rule sets you need to manage!
 + Deploy client code
     + Clone this repository.
