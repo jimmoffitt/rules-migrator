@@ -65,6 +65,12 @@ Here are some common user-stories that drove the development of this tool:
 
 ## Migration Tool Features  <a id="features" class="tall">&nbsp;</a>
 
+By design this tool relies on the Rules API 2.0 rule validation results, even when only producing a rules report and not actually posting rules to the ```Target``` Rules API. The Rules API 2.0 already does a lot of rule validation, and this tool was designed to take advantage of that. For example, the Rules API now disallows rules with explicit ANDs and lowercase ors, two of the most common syntactic mistakes when constructing PowerTrack rules. So rather than write new code for those validations, the Rules API is asked to validate all rules, even when just generating a rules report. When in report mode, it calls the new rule validation endpoint. This endpoint exercises the Rules API rule validation logic, but does not apply any rule updates.
+
+Another key detail of the Rules API that drove the design of this tool is the fact that it only takes one invalid rule to prevent the addition of *any* rules. If you are uploading 1000 rules, and 10 use a deprecated Operator, no rules are added. In the Rules API response payload, however, you will receive nicely detailed JSON that spells this out and indicates which rules were invalid. So, due to this design, the Rule Migrator will remove the invalid rules from the initial set of rules and submit the new rule set to the Rules API. The tool only attempts on re-try, but normally that is all you need.
+
+Here are some other features:
+
 + Supports generating a rules report, providing feedback on readiness for PowerTrack 2.0.  
 + When migrating rules from version 1.0 to 2.0, this tool translates rules when possible.
   + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated. These rules are called out in the 'rule migration summary' output.  
@@ -74,8 +80,8 @@ Here are some common user-stories that drove the development of this tool:
   + Writing write rules JSON to a local file.
   + POSTing rules to the target system using the PowerTrack Rules API.
   
-Note that this tool does not currently save the potentially batched JSON payloads, and only single complete ruleset files are ever written. (This functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method, where the batched payloads are created in memory.)
-  
+Note that this tool does not currently save the potentially batched JSON payloads (for a ruleset JSON file size of 120 MB, the required series of 5 MB files, for example), and only single complete ruleset files are ever written. (If this functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method, where the batched payloads are created in memory.)
+
   
 ## An Example of Migrating Rules from 1.0 to 2.0 <a id="example" class="tall">&nbsp;</a>  
   
