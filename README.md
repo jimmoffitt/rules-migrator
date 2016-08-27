@@ -213,7 +213,7 @@ Now, let's go ahead and migrate this ruleset to 2.0. To do this we will remove t
    
 Notice that the five version 1.0 rules containing deprecated Operators could not be migrated to 2.0 (and are noted in the 'ruile migration summary'). 
 
-Note that the Rule Migration tool also supports *writing the 2.0 ruleset to a JSON file*, allowing you to review them before writing them to your 2.0 system. To do this you can change the 'write mode' to 'file' with the ```-w "files"``` command-line option. 
+Note that the Rule Migration tool also supports *writing the 2.0 ruleset to a JSON file*, enabling you to review them before writing them to your 2.0 system. To do this you can change the 'write mode' to 'file' with the ```-w "file"``` command-line option. 
 
 This command will prepare your 2.0 rules, and write them to a 'Source_rules.json' JSON file:
 
