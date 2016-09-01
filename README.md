@@ -65,7 +65,7 @@ The rest of this document focuses on the Ruby example app developed to migrate r
 
 Here are some common user-stories that drove the development of this tool:
 
-+ As a real-time PowerTrack 1.0 customer, I want to know what shape my ruleset is in w.r.t. Gnip 2.0.
++ As a real-time PowerTrack 1.0 customer, I want to know what shape my ruleset is in for migrating to Gnip 2.0.
 + As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
 + As a real-time PowerTrack (1.0 or 2.0) customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
 + As a Replay customer, I want to clone my real-time rules to my Replay stream.
