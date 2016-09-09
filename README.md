@@ -347,14 +347,28 @@ $ruby rule_migrator_app.rb -r -s "https://api.gnip.com:443/accounts/{ACCOUNT_NAM
 $ruby rule_migrator_app.rb -w 'file' -s "https://api.gnip.com:443/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json" 
 ```
 + After review, I want to write the rules in that file to my ```Target``` system via the Rules API.
+
+```
+$ruby rule_migrator_app.rb -f "/my_rules_file.json" -w "api" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"
+```
  
 + Next, I want to go straight from my ```Source``` 1.0 system to my ```Target``` 2.0 system.
 
+```
+$ruby rule_migrator_app.rb -w "api" -s "https://api.gnip.com/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json" 
+```
+
 + As a real-time PowerTrack (1.0 or 2.0) customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
+
+```
+$ruby rule_migrator_app.rb -w "api" -s "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/dev.json"  -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/prod.json" 
+```
 
 + As a Replay customer, I want to clone my real-time rules to my Replay stream.
 
-
+```
+$ruby rule_migrator_app.rb -w "api" -s "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"  -t "https://gnip-stream.gnip.com/replay/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
+```
 
 ## 1.0 → 2.0 Rule Translations  <a id="translations" class="tall">&nbsp;</a>
 
@@ -391,7 +405,7 @@ Other substring matching Operators are being equivalent token-based Operators. T
 
 ### Other Deprecated Operators
     
-    The following Operators are deprecated in 2.0. No removal or translation will be attempted, and rules with these Operators will not be added to 2.0 streams.   
+The following Operators are deprecated in 2.0. No removal or translation will be attempted, and rules with these Operators will not be added to 2.0 streams.   
     
 + bio_lang:
 + has:profile_geo_region
