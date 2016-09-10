@@ -115,7 +115,7 @@ To help illustrate how to use this tool, we'll migrate an example PowerTrack 1.0
     + bio_lang:es "vamos a la playa"
     + klout_score:40 klout_topic_contains:coffee
     
-  + Rules with syntax that are supported by 2.0
+  + Rules with syntax that is NOT supported in 2.0
     + (this rule) AND (is no longer valid)
     + (this rule) or (is no longer valid) 
     + (#THIS or #THAT) and lang:en
