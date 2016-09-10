@@ -118,8 +118,8 @@ class RulesMigrator
 	  end
    end
 
-   #Self-discover what version/publisher of streams we are working with.
    def check_systems(source_url, target_url)
+	  #Self-discover what version/publisher of streams we are working with.
 
 	  continue = true
 
@@ -190,9 +190,9 @@ class RulesMigrator
 
    end
 
-   #Rules were loaded either from a single Rules API GET request, or loaded from a file.
-   #The number of rules may be quite high (up to 250K), and the payload size big (150 MB and higher?).
    def create_post_requests(rules)
+	  #Rules were loaded either from a single Rules API GET request, or loaded from a file.
+	  #The number of rules may be quite high (up to 250K), and the payload size big (150 MB and higher?).
 
 	  if @target_version == 1
 		 max_payload_size_in_mb = MAX_POST_DATA_SIZE_IN_MB_v1
@@ -215,7 +215,7 @@ class RulesMigrator
 	  #Check size
 	  if request.bytesize < (max_payload_size_in_mb * 1000000)
 		 requests << request
-		 AppLogger.log_debug "Request has size: #{request.bytesize/1000000} MB"
+		 AppLogger.log_debug "Request has size: #{'%.3f' % (request.bytesize/1000000)} MB"
 	  else
 		 requests = split_request(request, max_payload_size_in_mb)
 	  end
@@ -241,8 +241,8 @@ class RulesMigrator
 
    end
 
-   #All things PowerTrack 1.0 --> 2.0 Operators. 
    def translate_rules(rules)
+	  #All things PowerTrack 1.0 --> 2.0 Operators.
 
 	  AppLogger.log_info "Checking #{rules.count} rules for translation..."
 
@@ -275,7 +275,8 @@ class RulesMigrator
 		 processed_rules << rule_translated
 	  end
 
-	  AppLogger.log_info "Processed #{processed_rules.count} rules..."
+	  AppLogger.log_info "Prepared #{processed_rules.count} rules..."
+	  AppLogger.log_info "#{@rules_deprecated.count} rules contain deprecated Operators..."
 
 	  processed_rules
    end
@@ -308,7 +309,7 @@ class RulesMigrator
 
    end
 
-   def make_rule_files(target)
+   def make_rules_files(target)
 
 	  return false if target[:name].downcase == 'source'
 
@@ -372,12 +373,47 @@ class RulesMigrator
 
    end
 
+   def manage_validation_request url, request
+
+	  response = make_request url, request
+	  response_hash = JSON.parse(response.body) unless response.body == ''
+
+	  if (response.code == '200' or response.code == '201') or (response.code == '400' and response.message == 'OK') #Then all rules are syntactically OK, although maybe not all were created (already exists?).
+		 AppLogger.log_info "Successful request of validation endpoint."
+
+		 if response_hash['summary']['not_valid'] > 0 #Validation endpoint metadata.
+			AppLogger.log_debug "#{response_hash['summary']['not_valid']} rules were NOT valid."
+
+			response_hash['detail'].each do |detail|
+			   if detail['valid'] == false
+				  AppLogger.log_debug "Rule '#{detail['rule']['value']}' is not valid because: #{detail['message']}"
+				  @rules_invalid << detail['rule']['value']
+			   end
+			end
+		 end
+		 return 'ok'
+	  end
+   end
+
+   def validate_rules target
+   #This method manages calls to the the Rules API validation endpoint...
+
+	  #return nil if url includes? source
+	  requests = create_post_requests(target[:rules_json])
+
+	  requests.each do |request|
+     	 result = manage_validation_request target[:url], request
+ 	  end
+
+	  true
+
+   end
+
    def manage_initial_request url, request
 
 	  response = make_request url, request
-
 	  response_hash = JSON.parse(response.body) unless response.body == ''
-	  
+
 	  if (response.code == '200' or response.code == '201') or (response.code == '401' and response.message == 'Created') #Then all rules are syntactically OK, although maybe not all were created (already exists?).
 		 AppLogger.log_info "Successful rule post to target system."
 
@@ -400,10 +436,11 @@ class RulesMigrator
 			end
 		 end
 
+
 		 return 'ok'
 
 	  elsif (response.code == '422' or response.code == '401') and not response_hash['summary'].nil? #Rules API rejected at least one rule, do drop rules.
-		 
+
 		 AppLogger.log_info "No rules were created. Here are the offending rules:"
 
 		 response_hash['detail'].each do |detail|
@@ -414,7 +451,7 @@ class RulesMigrator
 			end
 		 end
 
-		 return 'clean up'
+		 return 'cleanup'
 
 	  elsif response.code[0] == '5' #retry on server-side 5## error code.
 		 AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
@@ -427,9 +464,9 @@ class RulesMigrator
 
    end
 
-   #After dropping bad rules, we retry once.
    def manage_cleanup_request url, request
-
+   #After dropping bad rules, we retry once.
+	  
 	  if @rules_invalid.count > 0
 		 request = drop_bad_rules_from_request(request, @rules_invalid)
 		 AppLogger.log_info "Retrying after removing #{@rules_invalid.count} bad 2.0 s@rules_invalidyntax rules...."
@@ -460,11 +497,9 @@ class RulesMigrator
 	  end
    end
 
-   #This method manages the Rules API requests...
    def migrate_rules target
-
-	  return false if target[:name].downcase == 'source'
-
+   #This method manages the Rules API requests...
+	  
 	  #return nil if url includes? source
 	  requests = create_post_requests(target[:rules_json])
 
@@ -483,83 +518,6 @@ class RulesMigrator
 
 	  true
 
-   end
-
-
-#TODO: THIS NEEDS TO BE REFACTORED INTO UPDATED PATTERN.
-#When running in 'report' mode, we go here and hit the rule validation endpoint.
-   def post_rules_to_validator(target)
-
-	  return false if target[:name].downcase == 'source'
-
-	  #return nil if url includes? source
-	  requests = create_post_requests(target[:rules_json])
-
-	  requests.each do |request|
-
-		 begin
-
-			AppLogger.log_info "Posting rules to #{target[:name]} Rule Validation endpoint."
-
-			target[:url] = target[:url].split('.json').first + '/validation.json'
-
-
-			response = @http.POST(target[:url], request, {"content-type" => "application/json", "accept" => "application/json"})
-			#response_json = response.body.to_json
-			response_hash = JSON.parse(response.body)
-
-			AppLogger.log_debug "response code: #{response.code} | message: #{response.message} "
-
-			if response.code == '200' or response.code == '201'
-			   AppLogger.log_info "Rules were successfully posted to rule validation endpoint."
-
-			   #Although we have a 201, it is possible some were not created since they already exist.
-			   AppLogger.log_info "#{response_hash['summary']['valid']} rules were valid."
-
-			   if response_hash['summary']['not_valid'] > 0
-				  AppLogger.log_debug "#{response_hash['summary']['not_valid']} rules were NOT valid."
-
-				  response_hash['detail'].each do |detail|
-					 if detail['valid'] == false
-						AppLogger.log_debug "Rule '#{detail['rule']['value']}' was not valid because: #{detail['message']}"
-						@rules_invalid << detail['rule']['value']
-					 end
-				  end
-			   end
-
-			else
-
-			   if response_hash['summary'].nil? #This is something the non-Rules API/syntax error.
-				  AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
-			   else #Request was processed, but probably at least one rule was invalid w.r.t. to PT 2.0.
-
-				  #Idea here is to drop the bad rules, and retry, logging the bad rules....
-
-				  AppLogger.log_info "No rules were valid. Here are the offending rules:"
-
-				  response_hash['detail'].each do |detail|
-					 if detail['valid'] == false and not detail['message'].nil?
-						AppLogger.log_info "Rule '#{detail['rule']['value']}' was not valid because: #{detail['message']}"
-
-						#if detail['message'] about new 2.0 syntax validator.
-						@rules_invalid << detail['rule']['value']
-
-					 elsif detail['valid'] == false and detail['message'].nil?
-						#AppLogger.log_debug "Rule '#{detail['rule']['value']}' is version 2.0 ready, but blocked."
-						#@rules_valid_but_blocked << detail['rule']
-					 end
-				  end
-
-			   end
-			end
-		 rescue
-			sleep 5
-			response = @http.POST(target[:url], request) #try again
-		 end
-
-	  end
-
-	  true
    end
 
    def GET_rules system, before = true
@@ -621,8 +579,7 @@ class RulesMigrator
 
 	  puts ''
 
-	  if not @report_only
-
+	  if not @report_only and @options[:write_mode] != 'file'
 		 puts 'Target system:'
 		 puts "   	Target[:url] = #{@target[:url]}"
 		 puts "   	Target system had #{@target[:num_rules_before]} rules before, and #{@target[:num_rules_after]} rules after."

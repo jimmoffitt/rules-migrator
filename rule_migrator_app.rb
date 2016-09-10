@@ -120,7 +120,7 @@ if __FILE__ == $0 #This script code is executed when running this file.
 
    #*******************
    #Try and get Target rules, for stats and configuration confirmation.
-   if not Migrator.report_only
+   if not Migrator.report_only and Migrator.options[:write_mode] != 'file'
 	  #Load Target rules.
 	  Migrator.target[:rules_json] = Migrator.GET_rules(Migrator.target, true)
 	  Migrator.target[:num_rules_after] = Migrator.target[:rules_json].count
@@ -138,7 +138,9 @@ if __FILE__ == $0 #This script code is executed when running this file.
 	  Migrator.target[:rules_json] = Migrator.translate_rules(Migrator.source[:rules_json])
    else
 	  Migrator.target[:rules_json] = Migrator.source[:rules_json]
-	  #TODO: mark all as OK? Seems it should be handled by summary writer.
+	  Migrator.target[:rules_json].each do |rule|
+		 Migrator.rules_ok << rule['value']
+	  end
    end
 
    continue = false if Migrator.target[:rules_json].nil?
@@ -153,22 +155,24 @@ if __FILE__ == $0 #This script code is executed when running this file.
    if not Migrator.report_only #translated rules ready to post
 
 	  if Migrator.options[:write_mode]  == 'file' and (Migrator.options[:rules_json_to_post].to_s == '')
-		 continue = Migrator.make_rules_file Migrator.target
+		 Migrator.target[:url] = Migrator.target[:url].split('.json').first + '/validation.json'
+		 continue = Migrator.validate_rules(Migrator.target) #Sending request to Validator endpoint!
+		 continue = Migrator.make_rules_files Migrator.target
 	  else
 		 continue = Migrator.migrate_rules(Migrator.target)
-   	     #continue = Migrator.post_rules(Migrator.target)
-	  end
-	  
-	  if continue #If migration successful, recheck Target rules. 	 
-		 Migrator.target[:rules_json] = Migrator.GET_rules(Migrator.target, false)
-		 AppLogger.log_error "ERROR re-checking target rules." if Migrator.target[:rules_json].nil?
-		 Migrator.target[:num_rules_after] = Migrator.target[:rules_json].count
-	  else
-		 AppLogger.log_error "Errors trying to POST rules to TARGET system. Quitting"
-		 abort
+
+		 if continue #If migration successful, recheck Target rules.
+			Migrator.target[:rules_json] = Migrator.GET_rules(Migrator.target, false)
+			AppLogger.log_error "ERROR re-checking target rules." if Migrator.target[:rules_json].nil?
+			Migrator.target[:num_rules_after] = Migrator.target[:rules_json].count
+		 else
+			AppLogger.log_error "Errors trying to POST rules to TARGET system. Quitting"
+			abort
+		 end
 	  end
    else
-	  continue = Migrator.post_rules_to_validator(Migrator.target)
+	  Migrator.target[:url] = Migrator.target[:url].split('.json').first + '/validation.json'
+	  continue = Migrator.validate_rules(Migrator.target) #Sending request to Validator endpoint!
    end
 
    Migrator.write_summary
