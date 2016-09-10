@@ -108,12 +108,17 @@ To help illustrate how to use this tool, we'll migrate an example PowerTrack 1.0
     + bio_name_contains:jim
     + profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely
   
-  + Rules with deprecated Operators (complete list of Operators with *no* replacement are included [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators).
+  + Rules with deprecated Operators (complete list of Operators with *no* replacement are included [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators)).
     + has:profile_geo_region (snow OR water)
     + has:profile_geo_subregion (coffee OR tea)
     + has:profile_geo_locality (motel OR hotel)
     + bio_lang:es "vamos a la playa"
     + klout_score:40 klout_topic_contains:coffee
+    
+  + Rules with syntax that are supported by 2.0
+    + (this rule) AND (is no longer valid)
+    + (this rule) or (is no longer valid) 
+    + (#THIS or #THAT) and lang:en
   
   
 For this example, our version 1.0 ```Source``` rules will be available at the following Rules API 1.0 endpoint:
@@ -144,25 +149,24 @@ For our example ruleset, the tool will output the following rule summary:
 ```
   Starting process at 2016-08-11 12:55:40 -0600
   Getting rules from Source system. Making Request to Rules API...
-      ... got 15 rules from Source system.
+      ... got 18 rules from Source system.
   
    ******************
-  Checking 15 rules for translation...
-  Processed 10 rules...
-  
+  Checking 18 rules for translation...
+   
   Running in 'report' mode, no changes will be made.
   
   ---------------------
   Rule Migrator summary
   
-  ---------------------
-  Source system:
-  	Source[:url] = https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/testv1/rules.json
-  	Source system has 15 rules.
-  	Source system has 3 rules ready for version 2.
-  	Source system has 7 rules that were translated to version 2.
-    Source system has 5 rules with version 1.0 syntax not supported in version 2.0.
-    Target system already has 0 rules from Source system.
+ ---------------------
+ Source system:
+ 	Source[:url] = https://api.gnip.com:443/accounts/jim/publishers/twitter/streams/track/testv1/rules.json
+ 	Source system has 18 rules.
+ 	Source system has 3 rules ready for version 2.
+ 	Source system has 7 rules that were translated to version 2.
+ 	Source system has 5 rules that contain deprecated Operators with no equivalent in version 2.0.
+    Source system has 3 rules with version 1.0 syntax not supported in version 2.0.
  
   ---------------------
   7 Source rules were translated:
@@ -174,13 +178,19 @@ For our example ruleset, the tool will output the following rule summary:
      'bio_name_contains:jim' ----> 'bio_name:jim'
      '-has:lang (sol OR sun)' ----> 'lang:und (sol OR sun)'
   
-  ---------------------
-  5 Source rules contain deprecated Operators with no equivalent in version 2.0:.
-     has:profile_geo_region (snow OR water)
-     bio_lang:es "vamos a la playa"
-     has:profile_geo_subregion (coffee OR tea)
-     klout_score:40 klout_topic_contains:coffee
-     has:profile_geo_locality (motel OR hotel)
+ ---------------------
+ 3 Source rules that have version 1.0 syntax not supported in version 2.0:
+    (#THIS or #THAT) and lang:en
+    (this rule) or (is no longer valid)
+    (this rule) AND (is no longer valid)
+  
+ ---------------------
+ 5 Source rules contain deprecated Operators with no equivalent in version 2.0:.
+    has:profile_geo_region (snow OR water)
+    bio_lang:es "vamos a la playa"
+    has:profile_geo_subregion (coffee OR tea)
+    klout_score:40 klout_topic_contains:coffee
+    has:profile_geo_locality (motel OR hotel)
   
   ---------------------
   
