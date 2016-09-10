@@ -355,19 +355,27 @@ $ruby rule_migrator_app.rb -f "/my_rules_file.json" -w "api" -t "https://gnip-ap
 + Next, I want to go straight from my ```Source``` 1.0 system to my ```Target``` 2.0 system.
 
 ```
-$ruby rule_migrator_app.rb -w "api" -s "https://api.gnip.com/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json" 
+$ruby rule_migrator_app.rb 
+        -w "api" 
+        -s "https://api.gnip.com/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json" 
+        -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json" 
 ```
 
 + As a real-time PowerTrack (1.0 or 2.0) customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
 
 ```
-$ruby rule_migrator_app.rb -w "api" -s "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/dev.json"  -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/prod.json" 
+$ruby rule_migrator_app.rb 
+        -w "api" 
+        -s "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/dev.json"  
+        -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/prod.json" 
 ```
 
 + As a Replay customer, I want to clone my real-time rules to my Replay stream.
 
 ```
-$ruby rule_migrator_app.rb -w "api" -s "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"  -t "https://gnip-stream.gnip.com/replay/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
+$ruby rule_migrator_app.rb 
+         -w "api" 
+         -s "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"            -t "https://gnip-stream.gnip.com/replay/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
 ```
 
 ## 1.0 → 2.0 Rule Translations  <a id="translations" class="tall">&nbsp;</a>

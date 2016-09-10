@@ -9,9 +9,9 @@ def parseOptions(o)
 
    #Passing in a config file.... Or you can set a bunch of parameters.
    cmd_line_params['account'] = nil
-   o.on('-a ACCOUNT', '--account', 'Account configuration file (including path) that provides OAuth settings.') { |account| cmd_line_params['account']= account }
+   o.on('-a ACCOUNT', '--account', 'Account configuration file (including path) that provides Gnip account details.') { |account| cmd_line_params['account']= account }
    cmd_line_params['options'] = nil
-   o.on('-c CONFIG', '--config', 'Settings configuration file (including path) that provides API settings.') { |config| cmd_line_params['options'] = config }
+   o.on('-c CONFIG', '--config', 'Settings configuration file (including path) that specify migration tool options.') { |config| cmd_line_params['options'] = config }
 
    cmd_line_params['source'] = nil
    o.on('-s SOURCE', '--source', "Rules API URL for GETting 'Source' rules.") { |source| cmd_line_params['source'] = source }
@@ -152,14 +152,19 @@ if __FILE__ == $0 #This script code is executed when running this file.
    
    if not Migrator.report_only #translated rules ready to post
 
-   	  continue = Migrator.post_rules(Migrator.target)
-   
+	  if Migrator.options[:write_mode]  == 'file' and (Migrator.options[:rules_json_to_post].to_s == '')
+		 continue = Migrator.make_rules_file Migrator.target
+	  else
+		 continue = Migrator.migrate_rules(Migrator.target)
+   	     #continue = Migrator.post_rules(Migrator.target)
+	  end
+	  
 	  if continue #If migration successful, recheck Target rules. 	 
 		 Migrator.target[:rules_json] = Migrator.GET_rules(Migrator.target, false)
 		 AppLogger.log_error "ERROR re-checking target rules." if Migrator.target[:rules_json].nil?
 		 Migrator.target[:num_rules_after] = Migrator.target[:rules_json].count
 	  else
-		 AppLogger.log_error "POSTing rules to TARGET system. Quitting"
+		 AppLogger.log_error "Errors trying to POST rules to TARGET system. Quitting"
 		 abort
 	  end
    else
