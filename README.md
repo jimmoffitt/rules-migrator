@@ -354,12 +354,16 @@ $ruby rule_migrator_app.rb -r -s "https://api.gnip.com:443/accounts/{ACCOUNT_NAM
 + Before I write my rules to my ```Target``` system via the Rules API 2.0, I want to write out a JSON file containing the candidate rules (including 2.0 translations) for review. Note that by default, the tool will write to a ```./rules``` subfolder by default. You can specify a different folder with the ```-d``` (directory) command-line option, or by setting the ```rules_folder``` setting in the ```options.yaml``` file.
 
 ```
-$ruby rule_migrator_app.rb -w 'file' -s "https://api.gnip.com:443/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json" 
+$ruby rule_migrator_app.rb 
+         -w 'file' 
+         -s "https://api.gnip.com:443/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json" 
 ```
 + After review, I want to write the rules in that file to my ```Target``` system via the Rules API.
 
 ```
-$ruby rule_migrator_app.rb -f "/my_rules_file.json" -w "api" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"
+$ruby rule_migrator_app.rb -f "/my_rules_file.json" 
+        -w "api" 
+        -t "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"
 ```
  
 + Next, I want to go straight from my ```Source``` 1.0 system to my ```Target``` 2.0 system.
@@ -385,7 +389,8 @@ $ruby rule_migrator_app.rb
 ```
 $ruby rule_migrator_app.rb 
          -w "api" 
-         -s "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"            -t "https://gnip-stream.gnip.com/replay/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
+         -s "https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json"            
+         -t "https://gnip-stream.gnip.com/replay/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
 ```
 
 ## 1.0 → 2.0 Rule Translations  <a id="translations" class="tall">&nbsp;</a>
