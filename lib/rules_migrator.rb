@@ -16,6 +16,7 @@ class RulesMigrator
 
    MAX_POST_DATA_SIZE_IN_MB_v1 = 1
    MAX_POST_DATA_SIZE_IN_MB_v2 = 2
+   RULES_PER_REQUEST = 3000
 
    REQUEST_SLEEP_IN_SECONDS = 10 #Sleep this long after hitting request rate limit.
 
@@ -158,32 +159,25 @@ class RulesMigrator
 
    def split_request all_rules_request, size_limit
 
-	  puts "Request payload size: #{all_rules_request.bytesize}"
-
-	  number_of_requests = (all_rules_request.bytesize / (size_limit.to_f * 1000000)).ceil
-	  #number_of_requests = (number_of_requests * 1.1).ceil
-
-	  puts "Generating #{number_of_requests} requests..."
-
 	  request_hash = JSON.parse(all_rules_request)
 
 	  rules = request_hash['rules']
 
-	  slice = (rules.count / number_of_requests.to_f).ceil
+	  slice = RULES_PER_REQUEST
+	  puts "Uploading #{slice} rules per request."
 
 	  rule_request_sets = rules.each_slice(slice).to_a
+	  
+	  puts "Making #{ rule_request_sets.count} requests."
 
 	  requests = []
 
 	  rule_request_sets.each do |set|
-		 #puts set.count
-
 		 #Make request
 		 request = {}
 		 request['rules'] = set
-
+		 #AppLogger.log_debug "Request has size: #{'%.2f' % (request.to_json.bytesize.to_f/1048576.0)} MB"
 		 requests << request.to_json
-
 	  end
 
 	  requests
@@ -211,11 +205,11 @@ class RulesMigrator
 
 	  #Create JSON for request.
 	  request = request_data.to_json
-
+	  AppLogger.log_debug "Request has size: #{'%.3f' % (request.bytesize/1048576)} MB"
+	
 	  #Check size
-	  if request.bytesize < (max_payload_size_in_mb * 1000000)
+	  if request.bytesize < (max_payload_size_in_mb * 1048576)
 		 requests << request
-		 AppLogger.log_debug "Request has size: #{'%.3f' % (request.bytesize/1000000)} MB"
 	  else
 		 requests = split_request(request, max_payload_size_in_mb)
 	  end
@@ -275,7 +269,7 @@ class RulesMigrator
 		 processed_rules << rule_translated
 	  end
 
-	  AppLogger.log_info "Prepared #{processed_rules.count} rules..."
+	  AppLogger.log_info "Translated #{@rules_translated.count} rules..."
 	  AppLogger.log_info "#{@rules_deprecated.count} rules contain deprecated Operators..."
 
 	  processed_rules
@@ -360,8 +354,10 @@ class RulesMigrator
 
 	  begin
 		 response = @http.POST(url, request, {"content-type" => "application/json", "accept" => "application/json"})
+		 
+		 #puts "Response: #{response.code} | #{response.message}"
 
-		 if response.code[0] = '4' and response.code != "422"
+		 if response.code[0] == '4' and response.code != "422"
 			AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
 		 end
 
@@ -413,8 +409,13 @@ class RulesMigrator
 
 	  response = make_request url, request
 	  response_hash = JSON.parse(response.body) unless response.body == ''
+	  
+	  if @target_version == 1 and response.message == 'Created'
+		 return 'ok'
+	  end
+	  
 
-	  if (response.code == '200' or response.code == '201') or (response.code == '401' and response.message == 'Created') #Then all rules are syntactically OK, although maybe not all were created (already exists?).
+	  if  @target_version == 2 and ((response.code == '200' or response.code == '201') or (response.code == '401' and response.message == 'Created')) #Then all rules are syntactically OK, although maybe not all were created (already exists?).
 		 AppLogger.log_info "Successful rule post to target system."
 
 		 #Although we have a 201, it is possible some were not created since they already exist.
@@ -455,6 +456,7 @@ class RulesMigrator
 
 	  elsif response.code[0] == '5' #retry on server-side 5## error code.
 		 AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
+		 sleep REQUEST_SLEEP_IN_SECONDS
 		 return 'retry'
 
 	  else #Let's quit for other errors... Authentication errors and the like.

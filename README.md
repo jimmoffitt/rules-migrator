@@ -83,13 +83,11 @@ Here are some other features:
   + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated. These rules are called out in the 'rule migration summary' output.  
 + Migrates rules tags.
 + Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
-+ Provides two 'output' options:
-  + Writing write rules JSON to a local file.
-  + POSTing rules to the target system using the PowerTrack Rules API.
-  
-Note that this tool does not currently save the potentially batched JSON payloads (for a ruleset JSON file size of 120 MB, the required series of 5 MB files, for example), and only single complete ruleset files are ever written. (If this functionality is needed, add it to the RuleMigrator's ```create_post_requests``` method, where the batched payloads are created in memory.)
-
-  
++ Provides two 'write mode' options:
+  + ```file```: writing write rules JSON to a local file.
+  + ```api```: POSTing rules to the target system using the PowerTrack Rules API.
++ When running with ```file``` write mode, the tool will produce a set of files up to 5 MB in size and write them to the ./rules folder.   
+     
 ## An Example of Migrating Rules from 1.0 to 2.0 <a id="example" class="tall">&nbsp;</a>  
   
 To help illustrate how to use this tool, we'll migrate an example PowerTrack 1.0 ruleset to 2.0. Our example PT 1.0 ruleset consists of a variety of rules to highlight different tool functionality. These include rules that are already completely compatible with PT 2.0, along with some that contain deprecated Operators, and some that require some sort of translation before adding to 2.0:
