@@ -82,7 +82,7 @@ Here are some other features:
 + When migrating rules from version 1.0 to 2.0, this tool translates rules when possible.
   + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated. These rules are called out in the 'rule migration summary' output.  
 + Migrates rules tags.
-+ Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0.
++ Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0 (with a 3K rule limit).
 + Provides two 'write mode' options:
   + ```file```: writing write rules JSON to a local file.
   + ```api```: POSTing rules to the target system using the PowerTrack Rules API.

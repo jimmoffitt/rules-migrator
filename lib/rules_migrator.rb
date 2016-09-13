@@ -16,7 +16,7 @@ class RulesMigrator
 
    MAX_POST_DATA_SIZE_IN_MB_v1 = 1
    MAX_POST_DATA_SIZE_IN_MB_v2 = 2
-   RULES_PER_REQUEST = 3000
+   RULES_PER_REQUEST = 3000 			#Tune this if request payloads are too big.
 
    REQUEST_SLEEP_IN_SECONDS = 10 #Sleep this long after hitting request rate limit.
 
