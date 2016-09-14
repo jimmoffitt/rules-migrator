@@ -1,8 +1,3 @@
-# TODOs:
-# [] Delete code has option to write to file... do we want/need that?  Or just do API and DELETE!
-# [] rule_deleter writes wrong output.
-
-
 require_relative './common/app_logger'
 require_relative './common/restful'
 require_relative './rules/rule_translator'
@@ -15,7 +10,7 @@ class RulesMigrator
 
 
    MAX_POST_DATA_SIZE_IN_MB_v1 = 1
-   MAX_POST_DATA_SIZE_IN_MB_v2 = 2
+   MAX_POST_DATA_SIZE_IN_MB_v2 = 5
    RULES_PER_REQUEST = 3000 			#Tune this if request payloads are too big.
 
    REQUEST_SLEEP_IN_SECONDS = 10 #Sleep this long after hitting request rate limit.
@@ -222,8 +217,29 @@ class RulesMigrator
 
 	  AppLogger.log_info "Getting rules from #{system[:name]} system. Making Request to Rules API..."
 	  response = @http.GET(system[:url])
+	  
+	  if response.code != '200'
+	  
+		 if response.code == '401'
+			AppLogger.log_error "Can not authenticate, please confirm your credential configuration in the 'account.yaml' file."
+			puts 'Quitting.'
+			abort
+		 end
 
-	  #TODO: handle response codes
+		 if response.code == '404'
+			AppLogger.log_error "Source Rules URL not found. Please confirm your Source Rules API configuration."
+			puts 'Quitting.'
+			abort
+		 end
+
+
+
+		 AppLogger.log_error "An #{response.code} error occurred with message #{response.message}."
+		 puts "Retrying after waiting #{REQUEST_SLEEP_IN_SECONDS} seconds. "
+		 sleep REQUEST_SLEEP_IN_SECONDS
+		 get_rules_from_api system
+
+	  end
 
 	  rules_payload = JSON.parse(response.body)
 	  rules = rules_payload['rules']
