@@ -17,10 +17,12 @@ $ruby rule_migrator_app.rb -w "api" -s "{my 1.0 Rules API 1.0 URL}" -t "{my Rule
 
 ```
 
-For example, say you have a Gnip account name of ```snowman``` and both 1.0 and 2.0 PowerTrack streams have the ```prod``` stream label, the command would look like: 
+For example, say you have a Gnip account name of ```snowman``` and both 1.0 and 2.0 PowerTrack streams have the ```prod``` stream label, the command would look like (all on one line): 
 
 ```
-$ruby rule_migrator_app.rb -w "api" -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json" 
+$ruby rule_migrator_app.rb -w "api" 
+            -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" 
+            -t "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json" 
 
 ```
 
