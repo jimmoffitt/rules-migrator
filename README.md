@@ -274,7 +274,10 @@ The Rule Migrator tool is written in Ruby. It is based on Ruby 2.0, and uses ver
       + Rules API URL of your ```Target``` system.
       + Specify the ```write_mode```, either 'api' or 'file'. 
     + See the [Configuration Details](#configuration-details) section for the details.
-    
+ 
++ Note for Windows installs:
+  + May need to install the 'certified' gem (or add it to the Gemfile and run bundler), and add ```require 'certified'``` to the /common/restful.rb class.
+  
 + To confirm everything is ready to go, you can run the following command:
     
     ```
