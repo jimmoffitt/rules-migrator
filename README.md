@@ -281,7 +281,7 @@ The Rule Migrator tool is written in Ruby. It is based on Ruby 2.0, and uses ver
 + To confirm everything is ready to go, you can run the following command:
     
     ```
-    $ruby rule_migrator.rb -h
+    $ruby rule_migrator_app.rb -h
     ```
     If you see a help 'screen' with command-line options, you should be good to go.
     
