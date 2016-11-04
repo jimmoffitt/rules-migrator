@@ -17,10 +17,12 @@ $ruby rule_migrator_app.rb -w "api" -s "{my 1.0 Rules API 1.0 URL}" -t "{my Rule
 
 ```
 
-For example, say you have a Gnip account name of ```snowman``` and both 1.0 and 2.0 PowerTrack streams have the ```prod``` stream label, the command would look like: 
+For example, say you have a Gnip account name of ```snowman``` and both 1.0 and 2.0 PowerTrack streams have the ```prod``` stream label, the command would look like (all on one line): 
 
 ```
-$ruby rule_migrator_app.rb -w "api" -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json" 
+$ruby rule_migrator_app.rb -w "api" 
+            -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" 
+            -t "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json" 
 
 ```
 
@@ -272,11 +274,14 @@ The Rule Migrator tool is written in Ruby. It is based on Ruby 2.0, and uses ver
       + Rules API URL of your ```Target``` system.
       + Specify the ```write_mode```, either 'api' or 'file'. 
     + See the [Configuration Details](#configuration-details) section for the details.
-    
+ 
++ Note for Windows installs:
+  + May need to install the 'certified' gem (or add it to the Gemfile and run bundler), and add ```require 'certified'``` to the /common/restful.rb class.
+  
 + To confirm everything is ready to go, you can run the following command:
     
     ```
-    $ruby rule_migrator.rb -h
+    $ruby rule_migrator_app.rb -h
     ```
     If you see a help 'screen' with command-line options, you should be good to go.
     
