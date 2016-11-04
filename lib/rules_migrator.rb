@@ -348,12 +348,6 @@ class RulesMigrator
 	  rules = request_hash['rules']
 	  rules_before = rules.count
 
-	  #puts rules.count
-
-	  #rules_invalid.each do |badrule|
-	  #	 puts badrule
-	  #end
-
 	  rules.each do |rule|
 		 if rules_invalid.include?(rule['value'])
 
@@ -503,7 +497,7 @@ class RulesMigrator
 
 			if detail['created'] == false and not detail['message'].nil?
 			   AppLogger.log_info "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
-			   @rule_invalid << detail['rule']['value']
+			   @rules_invalid << detail['rule']['value']
 			   @rules_invalid_all << detail['rule']['value']
 			end
 		 end
@@ -628,7 +622,7 @@ class RulesMigrator
 	  puts 'Source system:'
 	  puts "	Source[:url] = #{@source[:url]}"
 	  puts "	Source system has #{@source[:num_rules_before]} rules."
-	  puts "	Source system has #{@rules_ok.count - @rules_invalid.count} rules ready for version 2."
+	  puts "	Source system has #{@rules_ok.count - @rules_invalid_all.count} rules ready for version 2."
 	  puts "	Source system has #{@rules_translated.count} rules that were translated to version 2."
 	  puts "	Source system has #{@rules_deprecated.count} rules that contain deprecated Operators with no equivalent in version 2.0."
 	  puts "    Source system has #{@rules_invalid_all.count} rules with version 1.0 syntax not supported in version 2.0."
