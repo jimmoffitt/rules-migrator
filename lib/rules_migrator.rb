@@ -337,16 +337,21 @@ class RulesMigrator
 
    def drop_bad_rules_from_request(request, rules_invalid)
 
-	  AppLogger.log_info "Dropping rules with syntax not supportted in version 2.0."
+	  AppLogger.log_info "Dropping rules with syntax not supported in version 2.0."
 
+	  rules_before = 0
+	  rules_after = 0
+	  
 	  request_hash = JSON.parse(request)
 	  rules = request_hash['rules']
+	  rules_before = rules.count
+	    
 
 	  puts rules.count
 
-	  rules_invalid.each do |badrule|
-		 puts badrule
-	  end
+	  #rules_invalid.each do |badrule|
+	  #	 puts badrule
+	  #end
 
 	  rules.each do |rule|
 		 if rules_invalid.include?(rule['value'])
@@ -358,7 +363,37 @@ class RulesMigrator
 		 end
 	  end
 
-	  puts rules.count
+	  rules_after = rules.count
+
+	  #Double-check, did we drop all rules we wanted to?
+	  #If not, input = input.gsub(/[^0-9A-Za-z]/, '')
+	  #.gsub(/[^[:print:]]/,'.')
+
+	  if rules_after + rules_invalid.count > rules_before
+
+		 rules.each do |rule|
+			
+			rules_invalid.each do |rule_invalid|
+			   
+			   puts rule_invalid.gsub(/[^0-9A-Za-z]/, '')
+
+			   if rule['value'].gsub(/[^0-9A-Za-z]/, '') == rule_invalid.gsub(/[^0-9A-Za-z]/, '')
+				  rules.delete(rule)
+			   end
+			end
+		 end
+
+		 rules_invalid.each do |rule_invalid|
+
+			rules.each do |rule|
+
+			   if rule['value'].gsub(/[^0-9A-Za-z]/, '') == rule_invalid.gsub(/[^0-9A-Za-z]/, '')
+				  rules.delete(rule)
+			   end
+			end
+		 end
+
+	  end
 
 	  #Reassemble request
 	  request = {}
@@ -423,6 +458,9 @@ class RulesMigrator
 
    def manage_initial_request url, request
 
+
+	  @rules_invalid = []
+	  
 	  response = make_request url, request
 	  response_hash = JSON.parse(response.body) unless response.body == ''
 	  
