@@ -27,6 +27,7 @@ class RulesMigrator
 				 :rules_ok, #Rules that did not require any translation.
 				 :rules_translated, #Rules that were translated.
 				 :rules_invalid, #Valid 1.0 rules not passing new 2.0 syntax validators.
+				 :rules_invalid_all,
 				 :rules_deprecated, #1.0 Rules with deprecated Operators.
 				 :rules_already_exist,
 				 :rules_valid_but_blocked, #Any remaining 2.0 validation questions?
@@ -50,6 +51,7 @@ class RulesMigrator
 	  @rules_ok = [] #For same-version migrations, all should be OK.
 	  @rules_translated = []
 	  @rules_invalid = []
+	  @rules_invalid_all = []
 	  @rules_deprecated = []
 	  @rules_already_exist = []
 	  @rules_valid_but_blocked = []
@@ -345,9 +347,8 @@ class RulesMigrator
 	  request_hash = JSON.parse(request)
 	  rules = request_hash['rules']
 	  rules_before = rules.count
-	    
 
-	  puts rules.count
+	  #puts rules.count
 
 	  #rules_invalid.each do |badrule|
 	  #	 puts badrule
@@ -502,7 +503,8 @@ class RulesMigrator
 
 			if detail['created'] == false and not detail['message'].nil?
 			   AppLogger.log_info "Rule '#{detail['rule']['value']}' was not created because: #{detail['message']}"
-			   @rules_invalid << detail['rule']['value']
+			   @rule_invalid << detail['rule']['value']
+			   @rules_invalid_all << detail['rule']['value']
 			end
 		 end
 
@@ -629,7 +631,7 @@ class RulesMigrator
 	  puts "	Source system has #{@rules_ok.count - @rules_invalid.count} rules ready for version 2."
 	  puts "	Source system has #{@rules_translated.count} rules that were translated to version 2."
 	  puts "	Source system has #{@rules_deprecated.count} rules that contain deprecated Operators with no equivalent in version 2.0."
-	  puts "    Source system has #{@rules_invalid.count} rules with version 1.0 syntax not supported in version 2.0."
+	  puts "    Source system has #{@rules_invalid_all.count} rules with version 1.0 syntax not supported in version 2.0."
 
 	  puts "    Target system already has #{@rules_already_exist.count} rules from Source system." unless @report_only
 
@@ -654,10 +656,10 @@ class RulesMigrator
 	  puts ''
 	  #Rules that could not be added to version 2.0
 
-	  if @rules_invalid.count > 0
+	  if @rules_invalid_all.count > 0
 		 puts '---------------------'
-		 puts "#{@rules_invalid.count} Source rules that have version 1.0 syntax not supported in version 2.0:"
-		 @rules_invalid.each do |rule|
+		 puts "#{@rules_invalid_all.count} Source rules that have version 1.0 syntax not supported in version 2.0:"
+		 @rules_invalid_all.each do |rule|
 			puts "   #{rule}"
 		 end
 	  end
