@@ -1,5 +1,5 @@
 require_relative './common/app_logger'
-require_relative './common/restful'
+require_relative './common/requester'
 require_relative './rules/rule_translator'
 
 require 'json'
@@ -8,10 +8,12 @@ require 'objspace'
 
 class RulesMigrator
 
-
-   MAX_POST_DATA_SIZE_IN_MB_v1 = 1
-   MAX_POST_DATA_SIZE_IN_MB_v2 = 5
-   RULES_PER_REQUEST = 3000 			#Tune this if request payloads are too big.
+	 # TODO: references to Gnip v2 are not the same as Twitter API v2.
+	 # v1 used to refer to Gnip v1.0, and now it refers to Gnip v2, which is now the enterprise standard.
+	 # As Filtered stream v2 supports more and more rules, we'll see if these are re-instated.
+	 #MAX_POST_DATA_SIZE_IN_MB_v1 = 5
+	 #MAX_POST_DATA_SIZE_IN_MB_v2 = ???
+	 #RULES_PER_REQUEST = 3000 			#Tune this if request payloads are too big.
 
    REQUEST_SLEEP_IN_SECONDS = 10 #Sleep this long after hitting request rate limit.
 
@@ -39,7 +41,7 @@ class RulesMigrator
    def initialize(account_file, config_file)
 	  @source = {:url => '', :rules_json => [], :num_rules => 0, :name => 'Source'}
 	  @target = {:url => '', :rules_json => [], :num_rules_before => 0, :num_rules_after => 0, :name => 'Target'}
-	  @credentials = {:user_name => '', :password => ''}
+	  @credentials = {:user_name => '', :password => '', :bearer_token => ''}
 	  @options = {:verbose => true,
 				  :write_mode => 'file',
 				  :rules_folder => './rules',
@@ -64,9 +66,11 @@ class RulesMigrator
    end
 
    def set_http
-	  @http = GnipRESTful.new
-	  @http.user_name = @credentials[:user_name] #Set the info needed for authentication.
+	  @http = Requester.new
+		@http.url = @source[:url]
+		@http.user_name = @credentials[:user_name] #Set the info needed for authentication.
 	  @http.password = @credentials[:password]
+		@http.bearer_token = @credentials[:bearer_token]
    end
 
    def set_credentials(account_file)
@@ -122,7 +126,7 @@ class RulesMigrator
 	  continue = true
 
 	  if !source_url.nil?
-		 if source_url.include? 'api.gnip.com'
+		 if source_url.include? 'gnip-api.twitter.com'
 			@source_version = 1
 		 else
 			@source_version = 2
@@ -132,7 +136,7 @@ class RulesMigrator
 	  end
 
 	  if !target_url.nil?
-		 if target_url.include? 'twitter.com'
+		 if target_url.include? 'api.twitter.com/2'
 			@target_version = 2
 		 else
 			@target_version = 1
@@ -141,13 +145,14 @@ class RulesMigrator
 		 @target_version = 2 #Note: if no target specified, we are assuming this is a '2.0 readiness report'.
 	  end
 
+		#TODO: revist the rules here...
 	  if @source_version > @target_version
 		 continue = false #No support for down versioning...
 	  elsif @source_version == @target_version
 		 @do_rule_translation = false
 
 	  elsif @source_version < @target_version
-		 @do_rule_translation = true
+		 @do_rule_translation = false #TODO: Maybe?
 	  end
 
 	  return continue
@@ -185,7 +190,7 @@ class RulesMigrator
 	  #Rules were loaded either from a single Rules API GET request, or loaded from a file.
 	  #The number of rules may be quite high (up to 250K), and the payload size big (150 MB and higher?).
 
-	  if @target_version == 1
+	  if @target_version == 0 #TODO: Gnip v1 = Twitter v0
 		 max_payload_size_in_mb = MAX_POST_DATA_SIZE_IN_MB_v1
 	  else #version 2.0
 		 max_payload_size_in_mb = MAX_POST_DATA_SIZE_IN_MB_v2
@@ -218,7 +223,8 @@ class RulesMigrator
    def get_rules_from_api(system)
 
 	  AppLogger.log_info "Getting rules from #{system[:name]} system. Making Request to Rules API..."
-	  response = @http.GET(system[:url])
+		@http.url = system[:url]
+	  response = @http.GET()
 	  
 	  if response.code != '200'
 	  
@@ -254,9 +260,12 @@ class RulesMigrator
    end
 
    def translate_rules(rules)
-	  #All things PowerTrack 1.0 --> 2.0 Operators.
+	  #All things PowerTrack --> Twitter API v2 Operators.
 
-	  AppLogger.log_info "Checking #{rules.count} rules for translation..."
+		AppLogger.log_info "Are we translating from enterprise to v2? Translation step is being skipped. "
+		return rules
+
+		AppLogger.log_info "Checking #{rules.count} rules for translation..."
 
 	  processed_rules = []
 
@@ -399,17 +408,18 @@ class RulesMigrator
    def make_request url, request
 
 	  begin
-		 response = @http.POST(url, request, {"content-type" => "application/json", "accept" => "application/json"})
+			@http.url = url
+		  response = @http.POST(request, {"content-type" => "application/json", "accept" => "application/json"})
 		 
-		 #puts "Response: #{response.code} | #{response.message}"
+		   #puts "Response: #{response.code} | #{response.message}"
 
-		 if response.code[0] == '4' and response.code != "422"
-			AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
-		 end
+		   if response.code[0] == '4' and response.code != "422"
+			  AppLogger.log_error "Error occurred: code: #{response.code} | message: #{response.message}"
+		   end
 
-	  rescue => error
-		 puts "Error with POST request: #{error.message}"
-	  end
+	    rescue => error
+		   puts "Error with POST request: #{error.message}"
+	    end
 
 	  return response #object
 

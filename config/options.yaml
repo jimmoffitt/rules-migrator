@@ -1,9 +1,12 @@
 source: #Source stream for rules.
-  url: https://api.gnip.com/accounts/{ACCOUNT_NAME}/publishers/twitter/streams/track/{STREAM_LABEL}/rules.json
+  #url: https://api.gnip.com/accounts/jim/publishers/twitter/streams/track/dev/rules.json
+  #url: https://gnip-api.twitter.com/rules/powertrack/accounts/jim/publishers/twitter/dev.json
+  url: https://api.twitter.com/2/tweets/search/stream/rules
 
 target: #Target stream for rules.
-  url: https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
-
+  #url: https://gnip-api.twitter.com/rules/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
+  #url: https://gnip-api.twitter.com/rules/powertrack/accounts/jim/publishers/twitter/demo.json
+  url: https://api.twitter.com/2/tweets/search/stream/rules
 options:
   write_mode: file           #Options: file, api
   rules_folder: ./rules       #If generating rule JSON files, where to write them. Also source for JSON payloads to POST.
