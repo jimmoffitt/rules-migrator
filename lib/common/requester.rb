@@ -62,8 +62,6 @@ class Requester
   end
 
   def set_auth(request)
-    #TODO: do over!
-    #
     if @url.include? 'gnip'
       request.basic_auth(@user_name, @password)
       else
@@ -74,11 +72,10 @@ class Requester
   end
 
   def set_headers(request, headers)
-
-    #TODO: iterate thru headers and set header.
-    #request['header'] = headers[0]
+    headers.each do |header|
+      request[header[0]] = header[1]
+    end
     request
-
   end
 
   #Fundamental REST API methods:
@@ -94,14 +91,8 @@ class Requester
     request = Net::HTTP::Post.new(uri.path)
     request.body = @data
 
-    #TODO: do over!
     request = set_auth(request)
-    #if @search_type == 'v2' or @search_type == 'premium'
-    #  request['Authorization'] = "Bearer #{@app_token}"
-    #else
-    #  request.basic_auth(@app_token, @password)
-    #end
-    #
+
     if not headers.nil?
       request = set_headers(request, headers)
     end
@@ -117,7 +108,7 @@ class Requester
     return response
   end
 
-  def PUT(data = nil)
+  def PUT(data = nil, headers = nil)
 
     if not data.nil? #if request data passed in, use it.
       @data = data
@@ -129,11 +120,10 @@ class Requester
     request = Net::HTTP::Put.new(uri.path)
     request.body = @data
 
-    #TODO: do over!
-    if @search_type == 'v2' or @search_type == 'premium'
-      request['Authorization'] = "Bearer #{@app_token}"
-    else
-      request.basic_auth(@app_token, @password)
+    request = set_auth(request)
+
+    if not headers.nil?
+      request = set_headers(request, headers)
     end
 
     begin
@@ -146,7 +136,7 @@ class Requester
     return response
   end
 
-  def GET(params = nil)
+  def GET(params = nil, headers = nil)
     uri = URI(@url)
 
     #params are passed in as a hash.
@@ -159,15 +149,11 @@ class Requester
     http.use_ssl = true
     request = Net::HTTP::Get.new(uri.request_uri)
 
-    #TODO: do over!
     request = set_auth(request)
-    #if @search_type == 'v2' or @search_type == 'premium'
-    #  request['Authorization'] = "Bearer #{@app_token}"
-    #else
-    #  request.basic_auth(@app_token, @password)
-    #end
 
-    # TODO: Set headers
+    if not headers.nil?
+      request = set_headers(request, headers)
+    end
 
     begin
       response = http.request(request)
@@ -179,7 +165,7 @@ class Requester
     return response
   end
 
-  def DELETE(data = nil)
+  def DELETE(data = nil, headers = nil)
     if not data.nil?
       @data = data
     end
@@ -190,11 +176,10 @@ class Requester
     request = Net::HTTP::Delete.new(uri.path)
     request.body = @data
 
-    #TODO: do over!
-    if @search_type == 'v2' or @search_type == 'premium'
-      request['Authorization'] = "Bearer #{@app_token}"
-    else
-      request.basic_auth(@app_token, @password)
+    request = set_auth(request)
+
+    if not headers.nil?
+      request = set_headers(request, headers)
     end
 
     begin
