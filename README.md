@@ -10,29 +10,28 @@
 
 ### tl;dr
 
-To port your PowerTrack 1.0 rules to 2.0, run the following command:
+To port your PowerTrack rules to Filtered stream v2, run the following command:
 
 ```
-$ruby rule_migrator_app.rb -w "api" -s "{my 1.0 Rules API 1.0 URL}" -t "{my Rules API 2.0 URL}" 
+$ruby rule_migrator_app.rb -w "api" -s "{my PowerTrack Rules endpoint URL}" -t "{my v2 Filtered stream rules endpoint}" 
 
 ```
 
-For example, say you have a Gnip account name of ```snowman``` and both 1.0 and 2.0 PowerTrack streams have the ```prod``` stream label, the command would look like (all on one line): 
+For example, say you have an enterprise account name of ```snowman``` with a ```prod``` stream label, and you want to migrate your rules to your v2 Filtered stream, the command would look like (all on one line): 
 
 ```
 $ruby rule_migrator_app.rb -w "api" 
-            -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" 
-            -t "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json" 
-
+            -s "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json"  
+            -t "https://"
 ```
 
 And see a report like this:
 
 ```
 Source system:
- 	Source[:url] = https://api.gnip.com:443/accounts/snowman/publishers/twitter/streams/track/prod/rules.json
+ 	Source[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json 
  	Source system has 37576 rules.
- 	Source system has 35654 rules ready for version 2.
+ 	Source system has 35654 rules ready for Filtered stream v2.
  	Source system has 1907 rules that were translated to version 2.
     Source system has 15 rules with version 1.0 syntax not supported in version 2.0.
     Target system already had 0 rules from Source system.
