@@ -40,7 +40,7 @@ Source system:
             Source system has 15 rules with Operators not supported in the Twitter API v2 Filtered stream endpoint.
     
  Target system:
-    Target[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
+    Target[:url] = https://api.twitter.com/2/tweets/search/stream/rules
     Target system had 0 rules before, and 37561 rules after.
     Number of rules translated: 1907
  ```
