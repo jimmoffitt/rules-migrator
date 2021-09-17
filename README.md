@@ -391,7 +391,7 @@ $ruby rule_migrator_app.rb
          -t "https://gnip-stream.gnip.com/replay/powertrack/accounts/{ACCOUNT_NAME}/publishers/twitter/{STREAM_LABEL}.json
 ```
 
-## 1.0 → 2.0 Rule Translations  <a id="translations" class="tall">&nbsp;</a>
+## PowerTrack to v2 Filtered stream Rule Translations  <a id="translations" class="tall">&nbsp;</a>
 
 There are many PowerTrack Operator changes with 2.0. New Operators have been introduced, some have been deprecated, and some have had a grammar/name update. See [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html) and [HERE](http://support.gnip.com/articles/rules-migrator.html) for more details.
 
@@ -399,39 +399,13 @@ When migrating 1.0 rules to 2.0, this application attempts to translate when it 
 
 All rule translations are encapsualated in [THIS CLASS](https://github.com/jimmoffitt/rules-migrator/blob/master/lib/rules/rule_translator.rb).
 
-### Operator Replacements  
+
+### Deprecated Operators
     
-  Two PowerTrack 1.0 Operators are being replaced with renamed 2.0 Operators with identical functionality:
-  + ```country_code:``` is replaced with ```place_country:```
-  + ```profile_country_code:``` is replaced with ```profile_country:```
-
-The grammar for these Operators is being updated to be more concise and logical.
-
-Other substring matching Operators are being equivalent token-based Operators. This group is made up of the ```*_contains``` Operators: 
-
-+ ```place_contains:``` → ```place:```
-+ ```bio_location_contains:``` → ```bio_location:```
-+ ```bio_contains:``` → ```bio:```
-+ ```bio_name_contains:``` → ```bio_name:```
-+ ```profile_region_contains:``` → ```profile_region:```
-+ ```profile_locality_contains:``` → ```profile_locality:```
-+ ```profile_subregion_contains:``` → ```profile_subregion:```
-
-### Klout Operators
-
-+ __klout_score:__ This Operator is not yet supported in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
-+ __klout_topic_id:__ This Operator is not yet supported in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
-+ __klout_topic:__ This Operator is deprecated in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.
-+ __klout_topic_contains:__ This Operator is deprecated in 2.0. No removal or translation will be attempted, and rules with this clause will not be added to 2.0.   
-
-### Other Deprecated Operators
+The following Operators are deprecated in v2 Filtered stream. No removal or translation will be attempted, and rules with these Operators will not be added to v2 Filtered streams.   
     
-The following Operators are deprecated in 2.0. No removal or translation will be attempted, and rules with these Operators will not be added to 2.0 streams.   
-    
-+ bio_lang:
-+ has:profile_geo_region
-+ has:profile_geo_subregion
-+ has:profile_geo_locality
++ 
++ 
 
 
 
