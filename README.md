@@ -22,10 +22,14 @@ For example, say you have an enterprise account name of ```snowman``` with a ```
 ```
 $ruby rule_migrator_app.rb -w "api" 
             -s "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json"  
-            -t "https://"
+            -t "https://api.twitter.com/2/tweets/search/stream/rules"
 ```
 
-And see a report like this:
+The script can also work with files, either loading rules from a JSON file, and/or writing the new rules to a file. Writing the rules to a file enables you to review the them before loading into your v2 Filtered stream system. 
+
+The script can also generate a report that provides information about your rule sets. 
+
+Reports look like this:
 
 ```
 Source system:
@@ -33,9 +37,8 @@ Source system:
  	Source system has 37576 rules.
  	Source system has 35654 rules ready for Filtered stream v2.
  	Source system has 1907 rules that were translated to version 2.
-    Source system has 15 rules with version 1.0 syntax not supported in version 2.0.
-    Target system already had 0 rules from Source system.
- 
+            Source system has 15 rules with Operators not supported in the Twitter API v2 Filtered stream endpoint.
+    
  Target system:
     Target[:url] = https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
     Target system had 0 rules before, and 37561 rules after.
@@ -44,21 +47,21 @@ Source system:
 
 ## Introduction <a id="introduction" class="tall">&nbsp;</a>
 
-This tool migrates PowerTrack rules from one stream to another. It uses the Rules API to get rules from a **```Source```** stream, and adds those rules to a **```Target```** stream. There is also an option to write the JSON payloads to a local file for review, and later loading into the 'Target' system.
+This tool migrates PowerTrack rules to the Twitter API v2 Filtered stream endpoint. It can also move rules from one Filtered stream to another, as well as from one PowerTrack stream to another. It uses the rule endpoints to get rules from a **```Source```** stream, and adds those rules to a **```Target```** stream. There is also an option to write the JSON payloads to a local file for review, and later loading into the 'Target' system.
 
 This tool has four main use-cases:
-+ Provides feedback on your version 1.0 ruleset readiness for real-time PowerTrack 2.0.
-+ Clones PowerTrack version 1.0 (PT 1.0) rules to PowerTrack version 2.0 (PT 2.0).
++ Provides feedback on your PowerTrack ruleset's readiness for the Twitter API v2 Filtered stream endpoint.
++ Clones PowerTrack rules to the Twitter API v2 Filtered stream endpoint.
 + Clones real-time rules to Replay streams. 
 + Clones rules between real-time streams, such as 'dev' to 'prod' streams.
 
-If you are deploying a new PowerTrack 2.0 stream, this tool can be use to create your 2.0 ruleset, translating syntax when necessary, dropping rules when necessary, then either writing directly to the Rules API 2.0 endpoint or writing to a file for verification.
+If you are deploying a new Twitter API v2 Filtered stream, this tool can be use to create your v2 ruleset, translating syntax when possible, dropping rules when necessary, then either writing directly to the Filtered stream rules endpoint or writing to a file for verification.
  
-Given the potential high volumes of real-time Twitter data, it is a best practice to review any and all rules before adding to a live production stream. It is highly recommended that you initially build your ruleset on a non-production stream before moving to a production stream. Most Gnip customers have a development/sandbox stream deployed for their internal testing. If you have never had a 'dev' stream for development and testing, they come highly recommended. If you are migrating to PowerTrack 2.0, you have the option to use the new PowerTrack 2.0 stream as a development stream during the 30-day migration period. 
+Given the potential high volumes of real-time Twitter data, it is a best practice to review any and all rules before adding to a live production stream. It is highly recommended that you initially build your ruleset on a non-production stream before moving to a production stream. Many stream consumers have a development/sandbox stream deployed for their internal testing. If you have never had a 'dev' stream for development and testing, they come highly recommended. If you are migrating to the Filtered stream endpoint, you have the option to use the new stream as a development stream during your migration period. 
 
-After testing your rules on your development stream, you can also use this tool to copy them to your 2.0 production stream.
+After testing your rules on your v2 development stream, you can also use this tool to copy them to your v2 production stream.
 
-For more information on migrating PowerTrack rules from one stream to another, see [this Gnip support article](http://support.gnip.com/articles/migrating-powertrack-rules.html).
+For more information on migrating Twitter API v2 rules from one stream to another, see TODO: WHERE?.
 
 The rest of this document focuses on the Ruby example app developed to migrate rules.
 
@@ -66,82 +69,75 @@ The rest of this document focuses on the Ruby example app developed to migrate r
 
 Here are some common user-stories that drove the development of this tool:
 
-+ As a real-time PowerTrack 1.0 customer, I want to know what shape my ruleset is in for migrating to Gnip 2.0.
-+ As a real-time PowerTrack 1.0 customer, I want a tool to copy those rules to a PowerTrack 2.0 stream.
-+ As a real-time PowerTrack (1.0 or 2.0) customer, I want a tool to copy my 'dev' rules to my 'prod' stream.
-+ As a Replay customer, I want to clone my real-time rules to my Replay stream.
++ As a real-time PowerTrack customer, I want to know what shape my ruleset is in for migrating to the Twitter API v2 Filtered stream endpoint.
++ As a real-time PowerTrack customer, I want a tool to copy those rules to the Twitter API v2 Filtered stream endpoint.
++ As a real-time streaming user, I want a tool to copy my 'dev' rules to my 'prod' stream.
++ As a Replay user, I want to clone my real-time rules to my Replay stream.
 
 ## Migration Tool Features  <a id="features" class="tall">&nbsp;</a>
 
-By design this tool relies on the Rules API 2.0 rule validation results, even when only producing a rules report and not actually posting rules to the ```Target``` Rules API. The Rules API 2.0 already does a lot of rule validation, and this tool was designed to take advantage of that. For example, the Rules API now disallows rules with explicit ANDs and lowercase ors, two of the most common syntactic mistakes when constructing PowerTrack rules. So rather than write new code for those validations, the Rules API is asked to validate all rules, even when just generating a rules report. When in report mode, it calls the new rule validation endpoint. This endpoint exercises the Rules API rule validation logic, but does not apply any rule updates.
+By design this tool relies on rule validation results, even when only producing a rules report and not actually posting rules to the ```Target``` rules endpoint. The v2 rules endpoint already does a lot of rule validation, and this tool was designed to take advantage of that. For example, the rules endpoint disallows rules with explicit ANDs and lowercase ors, two of the most common syntactic mistakes when constructing Filtered stream rules. So rather than write new code for those validations, the rules endpoint is asked to validate all rules, even when just generating a rules report. When in report mode, it calls the new rule validation endpoint. This endpoint exercises the rule validation logic, but does not apply any rule updates.
 
-Another key detail of the Rules API that drove the design of this tool is the fact that it only takes one invalid rule to prevent the addition of *any* rules. If you are uploading 1000 rules, and 10 use a deprecated Operator, no rules are added. In the Rules API response payload, however, you will receive nicely detailed JSON that spells this out and indicates which rules were invalid. So, due to this design, the Rule Migrator will remove the invalid rules from the initial set of rules and submit the new rule set to the Rules API. The tool only attempts one re-try, but normally that is all you need.
+Another key detail of the rules endpoint that drove the design of this tool is the fact that with the v2 Fitlered stream rules endpoint you receive detailed information on what rules were added, and what rules failed validation. (With our previous version, one bad rule would cause no rules to be added).   
+
+
+{TODO: Since we are not going from PT 1.0 to 2.0, we can drop the ability to remove invalid rules for the retry}
 
 Here are some other features:
 
-+ Supports generating a rules report, providing feedback on readiness for PowerTrack 2.0.  
-+ When migrating rules from version 1.0 to 2.0, this tool translates rules when possible.
-  + Version 1.0 rules with [deprecated Operators](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators) can not be translated. These rules are called out in the 'rule migration summary' output.  
++ Supports generating a rules report, providing feedback on readiness for the Twitter API v2 Filtered stream endpoint.
++ When migrating rules from PowerTrack to Filtered stream, this tool translates rules when possible.
+  + PowerTrack rules with [deprecated Operators](http://WHERE?) can not be translated. These rules are called out in the 'rule migration summary' output.  
 + Migrates rules tags.
-+ Manages POST request payload limits, 1 MB with version 1.0, 5 MB with version 2.0 (with a 3K rule limit).
++ Manages POST request payload limits, 5 MB payload size (with a 5K rule limit).  TODO: confirm
 + Provides two 'write mode' options:
   + ```file```: writing write rules JSON to a local file.
   + ```api```: POSTing rules to the target system using the PowerTrack Rules API.
 + When running with ```file``` write mode, the tool will produce a set of files up to 5 MB in size and write them to the ./rules folder.   
      
-## An Example of Migrating Rules from 1.0 to 2.0 <a id="example" class="tall">&nbsp;</a>  
+## An Example of Migrating Rules from PowerTrack to the Twitter API v2 Filtered stream endpoint <a id="example" class="tall">&nbsp;</a>  
   
-To help illustrate how to use this tool, we'll migrate an example PowerTrack 1.0 ruleset to 2.0. Our example PT 1.0 ruleset consists of a variety of rules to highlight different tool functionality. These include rules that are already completely compatible with PT 2.0, along with some that contain deprecated Operators, and some that require some sort of translation before adding to 2.0:
+To help illustrate how to use this tool, we'll migrate an example PowerTrack ruleset to the Twitter API v2 Filtered stream endpoint. Our example PowerTrack ruleset consists of a variety of rules to highlight different tool functionality. These include rules that are already completely compatible with Filtered stream, along with some that contain deprecated Operators, and some that require some sort of translation before adding to Filtered stream:
    
-  + Rules that are ready for 2.0 (Note: the vast majority of rules should be in this category) 
-    + "this long rule is ready for 2.0" (snow OR #Winning) has:profile_geo @snowman friends_count:100
+  + Rules that are ready for Filtered stream (Note: the vast majority of rules should be in this category) 
+    + "this long rule is ready for Filtere stream" (snow OR #Winning) has:profile_geo @snowman friends_count:100
     + lang:en (rain OR flood OR storm)
   
+  [TODO]
   + Rules that require translation to 2.0
-    + (twitter_lang:es OR twitter_lang:pt) (nieve OR lluvia OR tiempo OR viento OR tormenta OR granizada)
-    + (twitter_lang:es OR lang:es) playa sol
-    + -has:lang (sol OR sun)
-    + (country_code:US OR profile_country_code:US) snow
-    + bio_contains:"developer advocate"
-    + place_contains:boulder OR bio_location_contains:boulder
-    + bio_name_contains:jim
-    + profile_region_contains:colorado OR profile_subregion_contains:weld OR profile_locality_contains:Greely
+    + retweet_of_status_id: 
   
-  + Rules with deprecated Operators (complete list of Operators with *no* replacement are included [HERE](http://support.gnip.com/apis/powertrack2.0/transition.html#DeprecatedOperators)).
-    + has:profile_geo_region (snow OR water)
-    + has:profile_geo_subregion (coffee OR tea)
-    + has:profile_geo_locality (motel OR hotel)
-    + bio_lang:es "vamos a la playa"
-    + klout_score:40 klout_topic_contains:coffee
-    
-  + Rules with syntax that is NOT supported in 2.0
-    + (this rule) AND (is no longer valid)
-    + (this rule) or (is no longer valid) 
-    + (#THIS or #THAT) and lang:en
+  + Rules with deprecated Operators (complete list of Operators with *no* replacement are included [HERE](http://where)).
+    + has:profile_geo (snow OR rain)
+    + profile_country:us (coffee OR tea)
+    + profile_regionLcolorado (ski OR snowboard) has:media
+    + profile_locality:minneapolis (motel OR hotel)
   
-  
-For this example, our version 1.0 ```Source``` rules will be available at the following Rules API 1.0 endpoint:
+For this example, our version PowerTrack ```Source``` rules will be available at the following Rules API 1.0 endpoint:
    
 ```
 https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json
 
 ```
    
-We'll port these rules to the following Rules API 2.0 ```Target``` endpoint:    
+We'll port these rules to the following v2 Filtered stream ```Target``` endpoint:    
 
 ```
-https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json
+https://api.twitter.com/2/tweets/search/stream/rules
 
 ```
   
-First, let's get some feedback on the readiness of this version 1.0 ruleset for 2.0. When you pass in the ```-r``` command-line option, the tool will run in a 'report' mode. The 'report' mode will not make any changes to your Target ruleset, and will report on how many rules are ready for 2.0, how many need translations and what the translated rules will look like, as well as how many can not be migrated to 2.0 due to deprecated Operators with no 2.0 equivalents. When running in 'report' mode, the tool makes a call to the Rules API 2.0 **rule validation endpoint** and reports on any rules that fails. Since we are making a request to that endpoint, you need to specify your ```Target``` Rules API 2.0 endpoint, even though we are not posting any rules to it. 
+First, let's get some feedback on the readiness of this PowerTrack ruleset for Filtered stream. When you pass in the ```-r``` command-line option, the tool will run in a 'report' mode. The 'report' mode will not make any changes to your Target ruleset, and will report on how many rules are ready for 2.0, how many need translations and what the translated rules will look like, as well as how many can not be migrated to Filtered stream due to deprecated Operators with no Filtered stream equivalents. When running in 'report' mode, the tool makes a call to the rules endpoint **rule validation endpoint** and reports on any rules that fails. Since we are making a request to that endpoint, you need to specify your ```Target``` rules endpoint, even though we are not posting any rules to it. 
   
-To run a rules report on our example Source system, run the tool with the ```-r``` option, along with specifying the Source Rules API endpoint with the ```-s Rules-API_URL``` option:
-  
-  ```
-  $ruby rule_migrator_app.rb -r -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" -t "https://gnip-api.twitter.com/rules/powertrack/accounts/snowman/publishers/twitter/prod.json"
+To run a rules report on our example Source system, run the tool with the ```-r``` option, along with specifying the Source rules endpoint with the ```-s Rules-API_URL``` option:
   
   ```
+  $ruby rule_migrator_app.rb -r -s "https://api.gnip.com/accounts/snowman/publishers/twitter/streams/track/prod/rules.json" -t "https://api.twitter.com/2/tweets/search/stream/rules"
+  
+  ```
+  
+[TODO: stopping updates here!!!!!]  
+  
   
 For our example ruleset, the tool will output the following rule summary:  
    
